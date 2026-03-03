@@ -1,13 +1,14 @@
 import { motion } from "framer-motion";
-import { Target, BarChart3, ListFilter, Lightbulb, ScanEye, Sparkles } from "lucide-react";
+import { Target, BarChart3, Shield, Stethoscope, GraduationCap, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const features = [
-  { icon: Target, title: "Binding Affinity", desc: "Predict how well a drug binds to a protein target using graph neural networks." },
-  { icon: BarChart3, title: "Property Analysis", desc: "Evaluate drug-likeness via Lipinski's Rule of Five with full molecular profiling." },
-  { icon: ListFilter, title: "Compound Screening", desc: "Screen and rank thousands of compounds by predicted affinity score." },
-  { icon: Lightbulb, title: "Explainable AI", desc: "Understand why the model makes predictions with attention-based explanations." },
-  { icon: ScanEye, title: "Attention Visualization", desc: "Visualize which atoms and bonds the network focuses on for each prediction." },
-  { icon: Sparkles, title: "Generative Models", desc: "Generate novel drug-like molecules using variational autoencoders." },
+  { icon: Target, title: "Virtual Screening", desc: "Screen and rank compounds by predicted binding affinity using graph neural networks.", link: "/screening" },
+  { icon: Shield, title: "ADMET & Lipinski", desc: "Evaluate drug-likeness, solubility, permeability, and toxicity flags in one click.", link: "/workspace" },
+  { icon: BarChart3, title: "Multi-Target Profiling", desc: "Predict binding across off-targets like hERG and CYP enzymes to catch safety risks early.", link: "/workspace" },
+  { icon: Stethoscope, title: "Mechanism & Pathway View", desc: "Browse protein targets with clinical context — mechanism of action, existing drugs, and indications.", link: "/workspace" },
+  { icon: GraduationCap, title: "Education Mode", desc: "Guided virtual lab with clinical case scenarios, concept tooltips, and step-by-step walkthroughs.", link: "/education" },
+  { icon: Users, title: "Classroom Tools", desc: "Create teaching sessions, spotlight student results, and export figures for lectures.", link: "/classroom" },
 ];
 
 const FeaturesGrid = () => {
@@ -35,13 +36,16 @@ const FeaturesGrid = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className="glass-panel rounded-xl p-6 glow-border hover:border-primary/30 transition-all duration-500 group"
+              className="glass-panel rounded-xl p-6 glow-border hover:border-primary/30 transition-all duration-500 group cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <f.icon className="w-5 h-5 text-primary" />
-              </div>
-              <h3 className="font-display text-lg font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              <Link to={f.link} className="block">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                  <f.icon className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="font-display text-lg font-semibold mb-2">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <span className="text-xs text-primary font-mono mt-3 inline-block opacity-0 group-hover:opacity-100 transition-opacity">Open →</span>
+              </Link>
             </motion.div>
           ))}
         </div>
