@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Atom, Zap, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
@@ -52,11 +54,29 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed"
+          className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
         >
-          Accelerating medicine innovation with AI-driven molecular prediction,
-          binding affinity analysis, and novel compound generation.
+          Explore how molecules bind, behave, and break down — before they reach the patient.
         </motion.p>
+
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="flex flex-wrap justify-center gap-4 mb-12"
+        >
+          <Link to="/workspace">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-5 text-sm font-display font-semibold glow-primary">
+              Launch Workspace
+            </Button>
+          </Link>
+          <Link to="/education">
+            <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 px-6 py-5 text-sm font-display font-semibold">
+              Try Education Mode
+            </Button>
+          </Link>
+        </motion.div>
 
         {/* Stats */}
         <motion.div
