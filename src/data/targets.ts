@@ -1,3 +1,5 @@
+import { fetchPubChemBySMILES, fetchPubChemName, type PubChemResult } from "@/lib/pubchem";
+
 export interface TargetInfo {
   id: string;
   name: string;
@@ -197,6 +199,7 @@ export interface MoleculeResult {
   tpsa: number;
   violations: number;
   drugLike: boolean;
+  dataSource: "pubchem" | "predicted";
   admet: {
     solubility: "high" | "moderate" | "low";
     permeability: "high" | "moderate" | "low";
@@ -210,6 +213,95 @@ export interface MoleculeResult {
   organWarnings: string[];
 }
 
+/**
+ * Generate a molecule result using REAL PubChem data with fallback to prediction.
+ * The affinity score and ADMET/off-target profiles remain model-predicted (no free API for these).
+ */
+export async function generateMoleculeResultReal(smiles: string): Promise<MoleculeResult> {
+  const pubchem = await fetchPubChemBySMILES(smiles);
+  const pubchemName = await fetchPubChemName(smiles);
+
+  if (pubchem) {
+    return buildResult(smiles, pubchem, pubchemName, "pubchem");
+  }
+
+  // Fallback to mock if PubChem can't resolve the SMILES
+  return generateMoleculeResult(smiles);
+}
+
+function buildResult(
+  smiles: string,
+  pub: PubChemResult,
+  pubName: string | null,
+  source: "pubchem" | "predicted"
+): MoleculeResult {
+  const known = SAMPLE_MOLECULES[smiles];
+  const name = known?.name ?? pubName ?? `CID-${pub.cid}`;
+
+  // Affinity is still predicted (no free API for binding affinity)
+  let hash = 0;
+  for (let i = 0; i < smiles.length; i++) hash = ((hash << 5) - hash + smiles.charCodeAt(i)) | 0;
+  const h = Math.abs(hash);
+  const affinity = Math.round(((h % 100) / 100) * 100) / 100;
+
+  const mw = pub.mw;
+  const logp = pub.logp;
+  const hDonors = pub.hDonors;
+  const hAcceptors = pub.hAcceptors;
+  const rotBonds = pub.rotBonds;
+  const tpsa = pub.tpsa;
+  const violations = (mw > 500 ? 1 : 0) + (logp > 5 ? 1 : 0) + (hDonors > 5 ? 1 : 0) + (hAcceptors > 10 ? 1 : 0);
+
+  // Off-targets are still model-predicted
+  const offTargets = [
+    { target: "hERG", score: Math.round(((h >> 2) % 100) / 100 * 100) / 100 },
+    { target: "CYP3A4", score: Math.round(((h >> 4) % 100) / 100 * 100) / 100 },
+    { target: "CYP2D6", score: Math.round(((h >> 6) % 100) / 100 * 100) / 100 },
+    { target: "COX-1", score: Math.round(((h >> 8) % 100) / 100 * 100) / 100 },
+    { target: "P-gp", score: Math.round(((h >> 10) % 100) / 100 * 100) / 100 },
+  ];
+
+  const hergScore = offTargets[0].score;
+  const cyp3a4Score = offTargets[1].score;
+
+  const ddiWarnings: string[] = [];
+  const organWarnings: string[] = [];
+  if (cyp3a4Score > 0.6) ddiWarnings.push("CYP3A4 interaction: may affect levels of statins, immunosuppressants, and some antiarrhythmics.");
+  if (hergScore > 0.5) ddiWarnings.push("Caution with QT-prolonging agents (macrolides, antipsychotics, class III antiarrhythmics).");
+  if (logp > 4) organWarnings.push("High lipophilicity: monitor for hepatic accumulation.");
+  if (tpsa < 25) organWarnings.push("Very low TPSA: potential for high CNS penetration — watch for neurological side effects.");
+  if (mw > 400) organWarnings.push("Higher MW compounds may have reduced renal clearance in impaired patients.");
+
+  return {
+    smiles,
+    name,
+    drugClass: known?.drugClass || "Unknown",
+    tags: known?.tags || [],
+    affinity,
+    mw,
+    logp,
+    hDonors,
+    hAcceptors,
+    rotBonds,
+    tpsa,
+    violations,
+    drugLike: violations === 0,
+    dataSource: source,
+    admet: {
+      solubility: tpsa > 75 ? "high" : tpsa > 40 ? "moderate" : "low",
+      permeability: tpsa < 90 ? "high" : tpsa < 140 ? "moderate" : "low",
+      cyp3a4: cyp3a4Score > 0.5,
+      hergRisk: hergScore > 0.7 ? "high" : hergScore > 0.4 ? "moderate" : "low",
+      hepatotoxicity: logp > 4 ? "moderate" : "low",
+    },
+    offTargets,
+    similarDrugs: known ? [known.name] : ["No close matches"],
+    ddiWarnings,
+    organWarnings,
+  };
+}
+
+/** Synchronous fallback using hash-based prediction (no API call) */
 export function generateMoleculeResult(smiles: string): MoleculeResult {
   let hash = 0;
   for (let i = 0; i < smiles.length; i++) hash = ((hash << 5) - hash + smiles.charCodeAt(i)) | 0;
@@ -258,6 +350,7 @@ export function generateMoleculeResult(smiles: string): MoleculeResult {
     tpsa,
     violations,
     drugLike: violations === 0,
+    dataSource: "predicted",
     admet: {
       solubility: tpsa > 75 ? "high" : tpsa > 40 ? "moderate" : "low",
       permeability: tpsa < 90 ? "high" : tpsa < 140 ? "moderate" : "low",

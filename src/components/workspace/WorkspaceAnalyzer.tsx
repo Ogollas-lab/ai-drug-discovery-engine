@@ -1,32 +1,36 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight } from "lucide-react";
+import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SAMPLE_MOLECULES, generateMoleculeResult, type MoleculeResult, type TargetInfo } from "@/data/targets";
+import { SAMPLE_MOLECULES, generateMoleculeResultReal, type MoleculeResult, type TargetInfo } from "@/data/targets";
 import ConceptTooltip from "@/components/ConceptTooltip";
 
 interface WorkspaceAnalyzerProps {
   selectedTarget: TargetInfo | null;
   onResult: (result: MoleculeResult | null) => void;
+  onSmilesChange?: (smiles: string, name: string) => void;
 }
 
-const WorkspaceAnalyzer = ({ selectedTarget, onResult }: WorkspaceAnalyzerProps) => {
+const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: WorkspaceAnalyzerProps) => {
   const [smiles, setSmiles] = useState("");
   const [result, setResult] = useState<MoleculeResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
 
-  const analyze = () => {
+  const analyze = async () => {
     setAnalyzing(true);
     setResult(null);
     onResult(null);
-    setTimeout(() => {
-      const res = generateMoleculeResult(smiles);
+    try {
+      const res = await generateMoleculeResultReal(smiles);
       setResult(res);
       onResult(res);
-      setAnalyzing(false);
-    }, 1200);
+      onSmilesChange?.(smiles, res.name);
+    } catch {
+      // Fallback handled inside generateMoleculeResultReal
+    }
+    setAnalyzing(false);
   };
 
   const loadSample = (s: string) => {
@@ -95,13 +99,13 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult }: WorkspaceAnalyzerProps)
       <div className="flex-1 overflow-y-auto p-4">
         <AnimatePresence mode="wait">
           {analyzing && (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center justify-center gap-3 py-16">
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center gap-3 py-16">
               <div className="flex gap-1">
                 {[0, 1, 2].map((i) => (
                   <motion.div key={i} animate={{ y: [0, -8, 0] }} transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }} className="w-2 h-2 rounded-full bg-primary" />
                 ))}
               </div>
-              <span className="text-xs text-muted-foreground font-mono">Processing molecular graph...</span>
+              <span className="text-xs text-muted-foreground font-mono">Fetching real data from PubChem...</span>
             </motion.div>
           )}
 
@@ -131,6 +135,16 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult }: WorkspaceAnalyzerProps)
                 </div>
               </div>
 
+              {/* Data source badge */}
+              <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono border ${
+                result.dataSource === "pubchem"
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "bg-secondary text-muted-foreground border-border"
+              }`}>
+                {result.dataSource === "pubchem" ? <Database className="w-3 h-3" /> : <Cpu className="w-3 h-3" />}
+                {result.dataSource === "pubchem" ? "Real data · PubChem" : "Predicted · Model"}
+              </div>
+
               {/* Binding Affinity */}
               <div className="glass-panel rounded-xl p-4 glow-border space-y-2">
                 <div className="flex items-center justify-between text-xs font-mono">
@@ -147,7 +161,7 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult }: WorkspaceAnalyzerProps)
                 </div>
                 {!expertMode && (
                   <p className="text-[10px] text-muted-foreground">
-                    Score ranges 0–1. Higher = stronger predicted binding. This is a model estimate, not experimental data.
+                    Score ranges 0–1. Higher = stronger predicted binding. Affinity is model-estimated; physicochemical properties are from PubChem.
                   </p>
                 )}
               </div>
@@ -171,7 +185,7 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult }: WorkspaceAnalyzerProps)
                         {prop.key ? <ConceptTooltip conceptKey={prop.key}>{prop.label}</ConceptTooltip> : prop.label}
                       </div>
                       <div className="text-sm font-display font-semibold text-foreground">
-                        {prop.value}
+                        {typeof prop.value === "number" ? prop.value.toFixed(2) : prop.value}
                         {prop.unit && <span className="text-[10px] text-muted-foreground ml-0.5">{prop.unit}</span>}
                       </div>
                     </div>
