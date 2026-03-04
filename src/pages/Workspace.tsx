@@ -6,19 +6,27 @@ import WorkspaceAnalyzer from "@/components/workspace/WorkspaceAnalyzer";
 import ClinicalSafetyPanel from "@/components/workspace/ClinicalSafetyPanel";
 import PipelineStrip from "@/components/workspace/PipelineStrip";
 import MissionControl from "@/components/workspace/MissionControl";
+import WhatIfChemist from "@/components/workspace/WhatIfChemist";
 import { type TargetInfo, type MoleculeResult } from "@/data/targets";
 
 const Workspace = () => {
   const [selectedTarget, setSelectedTarget] = useState<TargetInfo | null>(null);
   const [analysisResult, setAnalysisResult] = useState<MoleculeResult | null>(null);
+  const [currentSmiles, setCurrentSmiles] = useState<string | null>(null);
+  const [currentName, setCurrentName] = useState<string | null>(null);
 
   const activePhase = analysisResult ? 3 : selectedTarget ? 1 : 0;
+
+  const handleSmilesChange = (smiles: string, name: string) => {
+    setCurrentSmiles(smiles);
+    setCurrentName(name);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="pt-16 pb-8 px-4">
-        <div className="max-w-[1400px] mx-auto">
+        <div className="max-w-[1600px] mx-auto">
           {/* Experiment header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -31,6 +39,15 @@ const Workspace = () => {
               <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${analysisResult ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
                 {analysisResult ? "Completed" : selectedTarget ? "Running" : "Idle"}
               </span>
+              {analysisResult && (
+                <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                  analysisResult.dataSource === "pubchem"
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "bg-secondary text-muted-foreground border-border"
+                }`}>
+                  {analysisResult.dataSource === "pubchem" ? "📡 Live Data" : "🧮 Predicted"}
+                </span>
+              )}
             </div>
           </div>
 
@@ -42,8 +59,8 @@ const Workspace = () => {
             <MissionControl />
           </div>
 
-          {/* 3-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 min-h-[600px]">
+          {/* 4-column layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px_260px] gap-4 min-h-[600px]">
             {/* Left: Target & Disease */}
             <div className="glass-panel rounded-xl border border-border/50 overflow-hidden glow-border">
               <TargetDiseasePanel
@@ -57,12 +74,21 @@ const Workspace = () => {
               <WorkspaceAnalyzer
                 selectedTarget={selectedTarget}
                 onResult={setAnalysisResult}
+                onSmilesChange={handleSmilesChange}
               />
             </div>
 
             {/* Right: Clinical Safety */}
             <div className="glass-panel rounded-xl border border-border/50 overflow-hidden glow-border">
               <ClinicalSafetyPanel result={analysisResult} />
+            </div>
+
+            {/* Far right: What-If Chemist */}
+            <div className="glass-panel rounded-xl border border-border/50 overflow-hidden glow-border">
+              <WhatIfChemist
+                currentSmiles={currentSmiles}
+                currentName={currentName}
+              />
             </div>
           </div>
         </div>

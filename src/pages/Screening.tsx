@@ -1,32 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FlaskConical, ArrowLeft, Play, Download, Trash2, CheckCircle, XCircle, ArrowUpDown } from "lucide-react";
+import { FlaskConical, ArrowLeft, Play, Download, Trash2, CheckCircle, XCircle, ArrowUpDown, Database, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import FooterSection from "@/components/FooterSection";
-
-interface CompoundResult {
-  smiles: string;
-  name: string;
-  affinity: number;
-  mw: number;
-  logp: number;
-  hDonors: number;
-  hAcceptors: number;
-  tpsa: number;
-  violations: number;
-  drugLike: boolean;
-}
-
-const KNOWN: Record<string, string> = {
-  "CC(=O)OC1=CC=CC=C1C(=O)O": "Aspirin",
-  "CN1C=NC2=C1C(=O)N(C(=O)N2C)C": "Caffeine",
-  "CC(C)CC1=CC=C(C=C1)C(C)C(O)=O": "Ibuprofen",
-  "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C": "Testosterone",
-  "OC(=O)C1=CC=CC=C1O": "Salicylic Acid",
-};
+import { generateMoleculeResultReal, type MoleculeResult } from "@/data/targets";
 
 const SAMPLE_INPUT = `CC(=O)OC1=CC=CC=C1C(=O)O
 CN1C=NC2=C1C(=O)N(C(=O)N2C)C
@@ -37,43 +17,18 @@ CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C`;
 const MAX_COMPOUNDS = 100;
 const MAX_INPUT_LENGTH = 10000;
 
-function generateResult(smiles: string): CompoundResult {
-  // Deterministic-ish mock based on string hash
-  let hash = 0;
-  for (let i = 0; i < smiles.length; i++) hash = ((hash << 5) - hash + smiles.charCodeAt(i)) | 0;
-  const h = Math.abs(hash);
-  const affinity = Math.round(((h % 100) / 100) * 100) / 100;
-  const mw = Math.round((120 + (h % 400)) * 100) / 100;
-  const logp = Math.round(((h % 600) / 100 - 2) * 100) / 100;
-  const hDonors = h % 5;
-  const hAcceptors = (h >> 3) % 10;
-  const tpsa = Math.round(((h % 1500) / 10) * 100) / 100;
-  const violations = (mw > 500 ? 1 : 0) + (logp > 5 ? 1 : 0) + (hDonors > 5 ? 1 : 0) + (hAcceptors > 10 ? 1 : 0);
-  return {
-    smiles,
-    name: KNOWN[smiles] || `Compound-${(h % 9999).toString().padStart(4, "0")}`,
-    affinity,
-    mw,
-    logp,
-    hDonors,
-    hAcceptors,
-    tpsa,
-    violations,
-    drugLike: violations === 0,
-  };
-}
-
 type SortKey = "affinity" | "mw" | "logp" | "tpsa" | "name";
 
 const Screening = () => {
   const [input, setInput] = useState("");
-  const [results, setResults] = useState<CompoundResult[]>([]);
+  const [results, setResults] = useState<MoleculeResult[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("affinity");
   const [sortAsc, setSortAsc] = useState(false);
   const [error, setError] = useState("");
 
-  const handleScreen = () => {
+  const handleScreen = async () => {
     setError("");
     const lines = input
       .split(/[\n,;]+/)
@@ -91,13 +46,21 @@ const Screening = () => {
 
     setProcessing(true);
     setResults([]);
+    setProgress(0);
 
-    setTimeout(() => {
-      const res = lines.map(generateResult);
-      res.sort((a, b) => b.affinity - a.affinity);
-      setResults(res);
-      setProcessing(false);
-    }, 800 + lines.length * 40);
+    const batchResults: MoleculeResult[] = [];
+
+    // Process in batches of 3 to avoid rate limiting PubChem
+    for (let i = 0; i < lines.length; i += 3) {
+      const batch = lines.slice(i, i + 3);
+      const batchRes = await Promise.all(batch.map((s) => generateMoleculeResultReal(s)));
+      batchResults.push(...batchRes);
+      setProgress(Math.round((batchResults.length / lines.length) * 100));
+    }
+
+    batchResults.sort((a, b) => b.affinity - a.affinity);
+    setResults(batchResults);
+    setProcessing(false);
   };
 
   const sorted = [...results].sort((a, b) => {
@@ -112,10 +75,12 @@ const Screening = () => {
     else { setSortKey(key); setSortAsc(false); }
   };
 
+  const pubchemCount = results.filter((r) => r.dataSource === "pubchem").length;
+
   const exportCsv = () => {
-    const header = "Rank,Name,SMILES,Affinity,MW,LogP,H-Donors,H-Acceptors,TPSA,Violations,Drug-like\n";
+    const header = "Rank,Name,SMILES,Affinity,MW,LogP,H-Donors,H-Acceptors,TPSA,Violations,Drug-like,DataSource\n";
     const rows = sorted.map((r, i) =>
-      `${i + 1},"${r.name}","${r.smiles}",${r.affinity},${r.mw},${r.logp},${r.hDonors},${r.hAcceptors},${r.tpsa},${r.violations},${r.drugLike}`
+      `${i + 1},"${r.name}","${r.smiles}",${r.affinity},${r.mw},${r.logp},${r.hDonors},${r.hAcceptors},${r.tpsa},${r.violations},${r.drugLike},${r.dataSource}`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const a = document.createElement("a");
@@ -141,7 +106,7 @@ const Screening = () => {
                 Compound <span className="text-primary">Screening</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Paste multiple SMILES strings to screen and rank by predicted binding affinity.
+                Paste multiple SMILES strings to screen with real PubChem data and ranked binding affinity.
               </p>
             </div>
           </div>
@@ -180,7 +145,7 @@ const Screening = () => {
                 className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
               >
                 <Play className="w-4 h-4" />
-                {processing ? "Screening..." : "Screen Compounds"}
+                {processing ? `Screening... ${progress}%` : "Screen Compounds"}
               </Button>
               {input && (
                 <Button
@@ -196,18 +161,26 @@ const Screening = () => {
 
           {/* Loading */}
           {processing && (
-            <div className="flex items-center justify-center gap-3 py-16">
-              <div className="flex gap-1">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
-                    className="w-2 h-2 rounded-full bg-primary"
-                  />
-                ))}
+            <div className="space-y-3 py-8">
+              <div className="flex items-center justify-center gap-3">
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, delay: i * 0.15, repeat: Infinity }}
+                      className="w-2 h-2 rounded-full bg-primary"
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-muted-foreground font-mono">Fetching real data from PubChem... {progress}%</span>
               </div>
-              <span className="text-sm text-muted-foreground font-mono">Screening compounds...</span>
+              <div className="max-w-xs mx-auto h-1.5 rounded-full bg-secondary overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-neon-cyan"
+                  animate={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
           )}
 
@@ -225,6 +198,9 @@ const Screening = () => {
                     <span className="font-display font-semibold">
                       {sorted.length} compound{sorted.length !== 1 ? "s" : ""} ranked
                     </span>
+                    <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                      {pubchemCount}/{sorted.length} from PubChem
+                    </span>
                   </div>
                   <Button variant="ghost" onClick={exportCsv} className="text-muted-foreground gap-2 text-xs">
                     <Download className="w-4 h-4" /> Export CSV
@@ -232,7 +208,7 @@ const Screening = () => {
                 </div>
 
                 <div className="glass-panel rounded-2xl overflow-hidden glow-border overflow-x-auto">
-                  <table className="w-full min-w-[700px]">
+                  <table className="w-full min-w-[800px]">
                     <thead>
                       <tr className="border-b border-border">
                         <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground w-12">#</th>
@@ -254,6 +230,7 @@ const Screening = () => {
                             </span>
                           </th>
                         ))}
+                        <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground">Source</th>
                         <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground">Status</th>
                       </tr>
                     </thead>
@@ -282,9 +259,20 @@ const Screening = () => {
                               <span className="text-sm font-mono text-primary">{r.affinity.toFixed(2)}</span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm font-mono text-foreground">{r.mw}</td>
-                          <td className="px-4 py-3 text-sm font-mono text-foreground">{r.logp}</td>
-                          <td className="px-4 py-3 text-sm font-mono text-foreground">{r.tpsa}</td>
+                          <td className="px-4 py-3 text-sm font-mono text-foreground">{r.mw.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm font-mono text-foreground">{r.logp.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-sm font-mono text-foreground">{r.tpsa.toFixed(2)}</td>
+                          <td className="px-4 py-3">
+                            {r.dataSource === "pubchem" ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-primary">
+                                <Database className="w-3 h-3" /> PubChem
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+                                <Cpu className="w-3 h-3" /> Model
+                              </span>
+                            )}
+                          </td>
                           <td className="px-4 py-3">
                             {r.drugLike ? (
                               <span className="inline-flex items-center gap-1 text-xs font-mono text-primary">
