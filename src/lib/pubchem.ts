@@ -41,15 +41,15 @@ export async function fetchPubChemBySMILES(smiles: string): Promise<PubChemResul
     if (!props) return null;
 
     return {
-      cid: props.CID ?? 0,
+      cid: Number(props.CID) || 0,
       name: props.IUPACName ?? "Unknown",
       formula: props.MolecularFormula ?? "",
-      mw: props.MolecularWeight ?? 0,
-      logp: props.XLogP ?? 0,
-      hDonors: props.HBondDonorCount ?? 0,
-      hAcceptors: props.HBondAcceptorCount ?? 0,
-      rotBonds: props.RotatableBondCount ?? 0,
-      tpsa: props.TPSA ?? 0,
+      mw: Number(props.MolecularWeight) || 0,
+      logp: Number(props.XLogP) || 0,
+      hDonors: Number(props.HBondDonorCount) || 0,
+      hAcceptors: Number(props.HBondAcceptorCount) || 0,
+      rotBonds: Number(props.RotatableBondCount) || 0,
+      tpsa: Number(props.TPSA) || 0,
     };
   } catch {
     return null;
