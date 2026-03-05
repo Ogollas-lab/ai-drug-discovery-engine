@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Atom, Zap, Brain } from "lucide-react";
+import { Atom, Zap, Brain, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { resetOnboarding } from "@/components/OnboardingTour";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
@@ -76,6 +77,16 @@ const HeroSection = () => {
               Try Education Mode
             </Button>
           </Link>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              resetOnboarding();
+              window.location.reload();
+            }}
+            className="text-muted-foreground hover:text-primary px-4 py-5 text-sm font-mono gap-2"
+          >
+            <RotateCcw className="w-4 h-4" /> Retake Tour
+          </Button>
         </motion.div>
 
         {/* Stats */}

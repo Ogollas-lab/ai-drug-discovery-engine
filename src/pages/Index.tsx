@@ -5,10 +5,12 @@ import PipelineSection from "@/components/PipelineSection";
 import MoleculeAnalyzer from "@/components/MoleculeAnalyzer";
 import MetricsSection from "@/components/MetricsSection";
 import FooterSection from "@/components/FooterSection";
+import OnboardingTour from "@/components/OnboardingTour";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <OnboardingTour />
       <Navbar />
       <HeroSection />
       <FeaturesGrid />
