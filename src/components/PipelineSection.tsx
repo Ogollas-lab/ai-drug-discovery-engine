@@ -61,7 +61,7 @@ const PipelineSection = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="glass-panel rounded-xl p-6 md:p-8 glow-border hover:border-primary/40 transition-all duration-500 group"
+                className="glass-panel rounded-xl p-5 md:p-6 glow-border hover:border-primary/40 transition-all duration-500 group"
               >
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex items-start gap-4 md:w-1/3">
