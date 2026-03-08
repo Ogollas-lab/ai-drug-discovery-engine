@@ -57,7 +57,7 @@ const MoleculeAnalyzer = () => {
   };
 
   return (
-    <section className="py-32 px-6 relative" id="analyzer">
+    <section className="py-20 md:py-24 px-6 relative" id="analyzer">
       <div className="max-w-5xl mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
