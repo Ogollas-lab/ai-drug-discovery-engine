@@ -90,7 +90,7 @@ const PipelineSection = () => {
                 </div>
               </motion.div>
               {i < phases.length - 1 && (
-                <div className="flex justify-center py-2">
+                <div className="flex justify-center py-1">
                   <ArrowDown className="w-4 h-4 text-primary/40" />
                 </div>
               )}
