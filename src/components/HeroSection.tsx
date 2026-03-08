@@ -94,7 +94,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="flex flex-wrap justify-center gap-8 md:gap-16"
+          className="flex flex-wrap justify-center gap-8 md:gap-16 mb-16"
         >
           {[
             { icon: Atom, label: "GCN / GAT / VAE", desc: "Neural Architectures" },
