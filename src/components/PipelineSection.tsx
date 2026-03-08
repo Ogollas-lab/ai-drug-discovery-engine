@@ -53,7 +53,7 @@ const PipelineSection = () => {
           </h2>
         </motion.div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {phases.map((phase, i) => (
             <div key={i}>
               <motion.div
