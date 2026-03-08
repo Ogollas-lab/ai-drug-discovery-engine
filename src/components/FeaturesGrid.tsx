@@ -13,14 +13,14 @@ const features = [
 
 const FeaturesGrid = () => {
   return (
-    <section className="py-32 px-6 relative">
+    <section className="py-20 md:py-24 px-6 relative">
       <div className="absolute inset-0 gradient-mesh opacity-30" />
       <div className="max-w-6xl mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <span className="text-xs font-mono text-primary tracking-[0.3em] uppercase">Capabilities</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold mt-4">
@@ -28,7 +28,7 @@ const FeaturesGrid = () => {
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {features.map((f, i) => (
             <motion.div
               key={i}

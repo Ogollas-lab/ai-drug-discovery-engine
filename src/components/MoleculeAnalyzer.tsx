@@ -57,13 +57,13 @@ const MoleculeAnalyzer = () => {
   };
 
   return (
-    <section className="py-32 px-6 relative" id="analyzer">
+    <section className="py-20 md:py-24 px-6 relative" id="analyzer">
       <div className="max-w-5xl mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <span className="text-xs font-mono text-primary tracking-[0.3em] uppercase">Interactive</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold mt-4">

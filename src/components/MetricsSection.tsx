@@ -9,13 +9,13 @@ const benchmarks = [
 
 const MetricsSection = () => {
   return (
-    <section className="py-32 px-6">
+    <section className="py-20 md:py-24 px-6">
       <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <span className="text-xs font-mono text-primary tracking-[0.3em] uppercase">Benchmarks</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold mt-4">

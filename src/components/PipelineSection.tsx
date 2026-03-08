@@ -38,14 +38,14 @@ const phases = [
 
 const PipelineSection = () => {
   return (
-    <section className="py-32 px-6 relative">
+    <section className="py-20 md:py-24 px-6 relative">
       <div className="absolute inset-0 gradient-mesh opacity-50" />
       <div className="max-w-6xl mx-auto relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-20"
+          className="text-center mb-12"
         >
           <span className="text-xs font-mono text-primary tracking-[0.3em] uppercase">Architecture</span>
           <h2 className="font-display text-4xl md:text-5xl font-bold mt-4">
@@ -53,7 +53,7 @@ const PipelineSection = () => {
           </h2>
         </motion.div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {phases.map((phase, i) => (
             <div key={i}>
               <motion.div
@@ -61,7 +61,7 @@ const PipelineSection = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="glass-panel rounded-xl p-6 md:p-8 glow-border hover:border-primary/40 transition-all duration-500 group"
+                className="glass-panel rounded-xl p-5 md:p-6 glow-border hover:border-primary/40 transition-all duration-500 group"
               >
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex items-start gap-4 md:w-1/3">
@@ -90,7 +90,7 @@ const PipelineSection = () => {
                 </div>
               </motion.div>
               {i < phases.length - 1 && (
-                <div className="flex justify-center py-2">
+                <div className="flex justify-center py-1">
                   <ArrowDown className="w-4 h-4 text-primary/40" />
                 </div>
               )}
