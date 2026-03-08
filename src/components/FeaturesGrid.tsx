@@ -13,7 +13,7 @@ const features = [
 
 const FeaturesGrid = () => {
   return (
-    <section className="py-32 px-6 relative">
+    <section className="py-20 md:py-24 px-6 relative">
       <div className="absolute inset-0 gradient-mesh opacity-30" />
       <div className="max-w-6xl mx-auto relative z-10">
         <motion.div
