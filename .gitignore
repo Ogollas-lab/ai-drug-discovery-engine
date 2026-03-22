@@ -1,24 +1,86 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+bun.lockb
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env.example
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Misc
+.cache/
+tmp/
+temp/
+*.bak
+*.swp
+
+# OS
+Thumbs.db
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
+# Backend specific
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/dist/
+backend/build/
+backend/uploads/
+
+# Frontend specific
+ai-drug-discovery-engine/node_modules/
+ai-drug-discovery-engine/dist/
+ai-drug-discovery-engine/.env.local
+ai-drug-discovery-engine/build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+mongodb/data/
+
+# API Keys & Secrets
+.secrets/
+secrets.json
+api-keys.json
