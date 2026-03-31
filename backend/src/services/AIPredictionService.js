@@ -267,8 +267,10 @@ Provide:
 4. RMSD estimate for predicted binding pose
 5. Comparison to known binders for this target
 6. Uncertainty range
+7. **XAI Reasoning**: A 1-2 sentence explanation of the chemical basis for the score.
+8. **Top Features**: List of structural features (e.g., "Aromatic ring", "Hydroxyl group") and their impact on the affinity (-0.5 to +0.5).
 
-Return as JSON with numeric scores.`;
+Return as JSON with numeric scores and structured 'xai' object containing 'reasoning' and 'topFeatures'.`;
   }
 
   static _buildToxicityPrompt(molecule, externalData) {
@@ -295,8 +297,10 @@ Evaluate:
 4. Red flags present
 5. Structural alerts triggered
 6. Recommendations for modification if needed
+7. **XAI Reasoning**: A 1-2 sentence explanation of why this molecule poses specific toxicity risks.
+8. **Top Features**: List of toxicophores or problematic groups and their impact.
 
-Return as JSON with category scores and risk levels (low/medium/high).`;
+Return as JSON with category scores, risk levels (low/medium/high), and structured 'xai' object.`;
   }
 
   static _buildADMEPrompt(molecule, externalData) {
@@ -321,8 +325,10 @@ Predict:
 5. Blood-Brain Barrier penetration (yes/no + confidence)
 6. Estimated half-life (hours)
 7. Overall PK profile (favorable/moderate/poor)
+8. **XAI Reasoning**: A 1-2 sentence summary of the overall pharmacokinetic personality of the molecule.
+9. **Top Features**: Structural factors influencing ADME (e.g., "High Lipophilicity", "Low TPSA").
 
-Return JSON with numeric estimates and confidence scores.`;
+Return JSON with numeric estimates, confidence scores, and structured 'xai' object.`;
   }
 
   static _buildWhatIfPrompt(baseMolecule, modifications, targetProperty) {
@@ -426,6 +432,7 @@ Format as markdown suitable for presentation.`;
     return {
       score: scoreMatch ? parseFloat(scoreMatch[1]) : 50,
       confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) / 100 : 0.7,
+      xai: this._extractXAI(text),
       rawText: text,
       parsed: !!scoreMatch
     };
@@ -444,6 +451,7 @@ Format as markdown suitable for presentation.`;
         score: parseFloat(c.match(/\d+/)[0]) / 100
       })),
       redFlags: text.match(/red flag.*?\n/gi) || [],
+      xai: this._extractXAI(text),
       rawText: text
     };
   }
@@ -455,6 +463,7 @@ Format as markdown suitable for presentation.`;
       metabolism: this._extractNumeric(text, 'metabolism'),
       excretion: this._extractNumeric(text, 'excretion'),
       bbb: text.toLowerCase().includes('yes') || text.toLowerCase().includes('penetrate'),
+      xai: this._extractXAI(text),
       rawText: text
     };
   }
@@ -493,6 +502,30 @@ Format as markdown suitable for presentation.`;
       }
     });
     return metrics;
+  }
+
+  static _extractXAI(text) {
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        if (data.xai) return data.xai;
+        if (data.reasoning || data.topFeatures) {
+          return {
+            reasoning: data.reasoning,
+            topFeatures: data.topFeatures
+          };
+        }
+      }
+    } catch (e) {
+      // JSON parse failed, try regex
+    }
+
+    const reasoningMatch = text.match(/reasoning[:\s]+(.*?)(?=\n|$)/i);
+    return {
+      reasoning: reasoningMatch ? reasoningMatch[1] : 'The AI analyzed molecular descriptors and structure to generate this prediction.',
+      topFeatures: []
+    };
   }
 }
 

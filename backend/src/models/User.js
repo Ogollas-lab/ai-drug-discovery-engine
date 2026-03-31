@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema({
     minlength: 8,
     select: false
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
 
   // Organization
   organizationType: {
@@ -425,8 +430,12 @@ userSchema.methods.canPerformAction = function(actionType) {
 
   switch(actionType) {
     case 'simulation':
-      if (limits.dailySimulations === -1) return true; // unlimited
-      return usage.simulationsUsedToday < limits.dailySimulations;
+      if (limits.dailySimulations === -1 && limits.monthlySimulations === -1) return true; // unlimited
+      
+      const dailyOk = limits.dailySimulations === -1 || usage.simulationsUsedToday < limits.dailySimulations;
+      const monthlyOk = limits.monthlySimulations === -1 || usage.simulationsUsedThisMonth < limits.monthlySimulations;
+      
+      return dailyOk && monthlyOk;
     
     case 'create_molecule':
       if (limits.moleculesPerMonth === -1) return true; // unlimited
@@ -450,8 +459,12 @@ userSchema.methods.getRemainingQuota = function(actionType) {
 
   switch(actionType) {
     case 'simulation':
-      if (limits.dailySimulations === -1) return 'unlimited';
-      return Math.max(0, limits.dailySimulations - usage.simulationsUsedToday);
+      if (limits.dailySimulations === -1 && limits.monthlySimulations === -1) return 'unlimited';
+      
+      const remainingDaily = limits.dailySimulations === -1 ? Infinity : Math.max(0, limits.dailySimulations - usage.simulationsUsedToday);
+      const remainingMonthly = limits.monthlySimulations === -1 ? Infinity : Math.max(0, limits.monthlySimulations - usage.simulationsUsedThisMonth);
+      
+      return Math.min(remainingDaily, remainingMonthly);
     
     case 'create_molecule':
       if (limits.moleculesPerMonth === -1) return 'unlimited';

@@ -49,17 +49,26 @@ const Screening = () => {
     setProgress(0);
 
     const batchResults: MoleculeResult[] = [];
+    const invalidInputs: string[] = [];
 
     // Process in batches of 3 to avoid rate limiting PubChem
     for (let i = 0; i < lines.length; i += 3) {
       const batch = lines.slice(i, i + 3);
       const batchRes = await Promise.all(batch.map((s) => generateMoleculeResultReal(s)));
-      batchResults.push(...batchRes);
-      setProgress(Math.round((batchResults.length / lines.length) * 100));
+      
+      batchRes.forEach((res, idx) => {
+        if (res) batchResults.push(res);
+        else invalidInputs.push(batch[idx]);
+      });
+      
+      setProgress(Math.round(((i + batch.length) / lines.length) * 100));
     }
 
     batchResults.sort((a, b) => b.affinity - a.affinity);
     setResults(batchResults);
+    if (invalidInputs.length > 0) {
+      setError(`Could not resolve ${invalidInputs.length} input(s) in PubChem: ${invalidInputs.slice(0, 3).join(", ")}${invalidInputs.length > 3 ? "..." : ""}`);
+    }
     setProcessing(false);
   };
 

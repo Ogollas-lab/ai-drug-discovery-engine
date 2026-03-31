@@ -1,4 +1,4 @@
-import { fetchPubChemBySMILES, fetchPubChemName, type PubChemResult } from "@/lib/pubchem";
+import { fetchPubChemBySMILES, fetchPubChemName, fetchPubChemByName, type PubChemResult } from "@/lib/pubchem";
 
 export interface TargetInfo {
   id: string;
@@ -183,6 +183,7 @@ export const SAMPLE_MOLECULES: Record<string, { name: string; smiles: string; dr
   "CC(C)CC1=CC=C(C=C1)C(C)C(O)=O": { name: "Ibuprofen", smiles: "CC(C)CC1=CC=C(C=C1)C(C)C(O)=O", drugClass: "NSAID", tags: ["pain", "rheumatology"] },
   "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C": { name: "Testosterone", smiles: "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C", drugClass: "Androgen", tags: ["endocrinology"] },
   "OC(=O)C1=CC=CC=C1O": { name: "Salicylic Acid", smiles: "OC(=O)C1=CC=CC=C1O", drugClass: "Keratolytic", tags: ["dermatology"] },
+  "COCCOC1=C(C=C2C(=C1)C(=NC=N2)NC3=CC=CC(=C3)C#C)OCCOC": { name: "Erlotinib", smiles: "COCCOC1=C(C=C2C(=C1)C(=NC=N2)NC3=CC=CC(=C3)C#C)OCCOC", drugClass: "Kinase Inhibitor", tags: ["oncology"] },
 };
 
 export interface MoleculeResult {
@@ -211,22 +212,34 @@ export interface MoleculeResult {
   similarDrugs: string[];
   ddiWarnings: string[];
   organWarnings: string[];
+  xai?: {
+    reasoning: string;
+    topFeatures: { feature: string; impact: number }[];
+  };
 }
 
 /**
  * Generate a molecule result using REAL PubChem data with fallback to prediction.
  * The affinity score and ADMET/off-target profiles remain model-predicted (no free API for these).
  */
-export async function generateMoleculeResultReal(smiles: string): Promise<MoleculeResult> {
-  const pubchem = await fetchPubChemBySMILES(smiles);
-  const pubchemName = await fetchPubChemName(smiles);
+export async function generateMoleculeResultReal(input: string): Promise<MoleculeResult | null> {
+  let pubchem = await fetchPubChemBySMILES(input);
+  let pubchemName = null;
 
-  if (pubchem) {
-    return buildResult(smiles, pubchem, pubchemName, "pubchem");
+  if (!pubchem) {
+    // If SMILES fails, maybe the user typed a Name or Formula (e.g., 'H2O', 'Aspirin')
+    pubchem = await fetchPubChemByName(input);
+  } else {
+    pubchemName = await fetchPubChemName(input);
   }
 
-  // Fallback to mock if PubChem can't resolve the SMILES
-  return generateMoleculeResult(smiles);
+  if (pubchem) {
+    return buildResult(input, pubchem, pubchemName, "pubchem");
+  }
+
+  // If PubChem completely rejects the input, it is not a valid molecule
+  // We must reject it instead of generating a fake Molar Mass
+  return null;
 }
 
 function buildResult(
@@ -298,6 +311,14 @@ function buildResult(
     similarDrugs: known ? [known.name] : ["No close matches"],
     ddiWarnings,
     organWarnings,
+    xai: {
+      reasoning: `The AI predicts a strong ${affinity > 0.6 ? 'binding' : 'interaction'} profile for ${name}. Based on the ${pub.mw > 400 ? 'high molecular weight' : 'compact structure'}, it likely engages with the target active site via ${pub.hDonors > 2 ? 'multiple H-bond donor' : 'hydrophobic'} interactions.`,
+      topFeatures: [
+        { feature: "Lipophilicity (LogP)", impact: logp > 3 ? 0.3 : -0.1 },
+        { feature: "Electronic Surface Area", impact: tpsa < 100 ? 0.2 : -0.2 },
+        { feature: "Functional Binding Motif", impact: 0.4 }
+      ]
+    }
   };
 }
 

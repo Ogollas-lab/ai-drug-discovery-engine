@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const subscriptionRoutes = require('./routes/subscription');
 const classroomRoutes = require('./routes/classroom');
 const webhookRoutes = require('./routes/webhooks');
+const adminRoutes = require('./routes/admin');
 
 // Middleware
 const {
@@ -33,6 +34,9 @@ app.use(cors({
 
 // Logging middleware
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
+
+// Webhook Routes MUST be mounted before express.json() to preserve raw body for Stripe signatures
+app.use('/api/webhooks', webhookRoutes);
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
@@ -59,8 +63,10 @@ app.use('/api/', resetMonthlyMetrics);
 // Authentication Routes (public)
 app.use('/api/auth', authRoutes);
 
-// Webhook Routes (raw body, no auth needed)
-app.use('/api/webhooks', webhookRoutes);
+// Admin Routes (protected by authenticateToken internally + requireAdmin)
+app.use('/api/admin', adminRoutes);
+
+// Webhook Routes have been lifted above body-parsers
 
 // Subscription Routes (require auth)
 app.use('/api/subscription', authenticateToken, subscriptionRoutes);

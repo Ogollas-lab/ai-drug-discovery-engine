@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const { sendSubscriptionUpgradeEmail } = require('../services/emailService');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -33,6 +34,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
   try {
     switch (event.type) {
+      // Checkout session completed
+      case 'checkout.session.completed':
+        await handleCheckoutSessionCompleted(event.data.object);
+        break;
+
       // Customer subscription created
       case 'customer.subscription.created':
         await handleSubscriptionCreated(event.data.object);
@@ -77,6 +83,54 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     });
   }
 });
+
+/**
+ * Handle checkout session completed event
+ */
+async function handleCheckoutSessionCompleted(session) {
+  try {
+    const { userId, tier } = session.metadata;
+    if (!userId || !tier) {
+      console.log('⚠️ Checkout session missing metadata (userId, tier)', session.id);
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('⚠️ No user found for checkout session userId:', userId);
+      return;
+    }
+
+    console.log(`✓ Checkout Session Paid. Upgrading user ${userId} to ${tier}`);
+
+    // Link customer/subscription IDs
+    user.subscription.stripeCustomerId = session.customer;
+    if (session.subscription) {
+      user.subscription.stripeSubscriptionId = session.subscription;
+    }
+
+    // Upgrade tier
+    user.subscription.tier = tier;
+    user.subscription.status = 'active';
+    user.subscription.startDate = new Date();
+    user.subscription.renewalDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // Reset usage limits since they just paid
+    user.usageMetrics.simulationsUsedToday = 0;
+    user.usageMetrics.simulationsUsedThisMonth = 0;
+    user.usageMetrics.moleculesCreatedThisMonth = 0;
+
+    await user.save();
+    console.log(`✓ User upgraded securely via webhook.`);
+
+    // Send the user a beautiful welcome email about their new SaaS tier
+    const price = SUBSCRIPTION_TIERS[tier] ? SUBSCRIPTION_TIERS[tier].price : 0;
+    await sendSubscriptionUpgradeEmail(user, tier, price);
+
+  } catch (error) {
+    console.error('Error handling checkout session:', error);
+  }
+}
 
 /**
  * Handle subscription created event

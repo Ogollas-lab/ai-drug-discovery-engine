@@ -6,6 +6,12 @@ const ExternalDataService = require('../services/ExternalDataService');
 const AIPredictionService = require('../services/AIPredictionService');
 const rateLimitQueue = require('../services/RateLimitQueue');
 const {
+  authenticateToken,
+  checkUsageQuota,
+  enforceActionLimit,
+  trackUsage
+} = require('../middleware/auth');
+const {
   applyDrugRules,
   generateRecommendations,
   generateChemistryContext,
@@ -16,7 +22,12 @@ const {
  * POST /api/predictions/binding-affinity
  * Predict binding affinity to target protein
  */
-router.post('/binding-affinity', async (req, res) => {
+router.post('/binding-affinity',
+  authenticateToken,
+  checkUsageQuota,
+  enforceActionLimit('prediction'),
+  trackUsage('prediction'),
+  async (req, res) => {
   try {
     const { moleculeId, smiles, targetProtein, targetUniprotId } = req.body;
 
@@ -118,7 +129,12 @@ router.post('/binding-affinity', async (req, res) => {
  * POST /api/predictions/toxicity
  * Predict toxicity profile
  */
-router.post('/toxicity', async (req, res) => {
+router.post('/toxicity',
+  authenticateToken,
+  checkUsageQuota,
+  enforceActionLimit('prediction'),
+  trackUsage('prediction'),
+  async (req, res) => {
   try {
     const { moleculeId, smiles } = req.body;
 
@@ -200,7 +216,12 @@ router.post('/toxicity', async (req, res) => {
  * POST /api/predictions/adme
  * Predict ADME properties
  */
-router.post('/adme', async (req, res) => {
+router.post('/adme',
+  authenticateToken,
+  checkUsageQuota,
+  enforceActionLimit('prediction'),
+  trackUsage('prediction'),
+  async (req, res) => {
   try {
     const { moleculeId, smiles } = req.body;
 
@@ -374,7 +395,12 @@ router.get('/comprehensive/:moleculeId', async (req, res) => {
  * POST /api/predictions/analyze
  * Analyze molecule data with Gemini AI (with rate limit handling)
  */
-router.post('/analyze', async (req, res) => {
+router.post('/analyze',
+  authenticateToken,
+  checkUsageQuota,
+  enforceActionLimit('simulation'),
+  trackUsage('simulation'),
+  async (req, res) => {
   try {
     const { prompt, type, moleculeData } = req.body;
 

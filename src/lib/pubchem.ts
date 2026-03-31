@@ -57,6 +57,37 @@ export async function fetchPubChemBySMILES(smiles: string): Promise<PubChemResul
 }
 
 /**
+ * Fetch real molecular properties from PubChem by common Name/Formula (e.g., Aspirin, H2O).
+ */
+export async function fetchPubChemByName(name: string): Promise<PubChemResult | null> {
+  try {
+    const encoded = encodeURIComponent(name);
+    const propsUrl = `${BASE}/compound/name/${encoded}/property/MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,IUPACName/JSON`;
+
+    const response = await fetch(propsUrl);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const props = data?.PropertyTable?.Properties?.[0];
+    if (!props) return null;
+
+    return {
+      cid: Number(props.CID) || 0,
+      name: props.IUPACName ?? name,
+      formula: props.MolecularFormula ?? "",
+      mw: Number(props.MolecularWeight) || 0,
+      logp: Number(props.XLogP) || 0,
+      hDonors: Number(props.HBondDonorCount) || 0,
+      hAcceptors: Number(props.HBondAcceptorCount) || 0,
+      rotBonds: Number(props.RotatableBondCount) || 0,
+      tpsa: Number(props.TPSA) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch a friendlier compound name from PubChem synonyms.
  */
 export async function fetchPubChemName(smiles: string): Promise<string | null> {

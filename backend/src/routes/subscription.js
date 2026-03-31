@@ -182,14 +182,15 @@ router.get('/current', authenticateToken, async (req, res) => {
 });
 
 /**
- * POST /api/subscription/upgrade
- * Upgrade subscription tier
+ * POST /api/subscription/create-checkout-session
+ * Create a Stripe Checkout Session for subscription upgrade
  */
-router.post('/upgrade', authenticateToken, async (req, res) => {
+router.post('/create-checkout-session', authenticateToken, async (req, res) => {
   try {
-    const { newTier, paymentMethodId } = req.body;
+    const { tierId } = req.body;
 
-    if (!newTier || !SUBSCRIPTION_TIERS[newTier]) {
+    // Check if valid tier (pro, university, enterprise)
+    if (!tierId || !SUBSCRIPTION_TIERS[tierId] || tierId === 'free') {
       return res.status(400).json({
         success: false,
         message: 'Invalid subscription tier'
@@ -205,72 +206,61 @@ router.post('/upgrade', authenticateToken, async (req, res) => {
       });
     }
 
-    // Prevent downgrade without confirmation
-    const currentTierOrder = { free: 0, pro: 1, university: 2, enterprise: 3 };
-    if (currentTierOrder[newTier] < currentTierOrder[user.subscription.tier]) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please contact support to downgrade your subscription'
-      });
-    }
-
-    // If upgrading to paid tier, create Stripe subscription
-    if (newTier !== 'free' && !user.subscription.stripeCustomerId) {
-      if (!paymentMethodId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Payment method required for paid subscriptions'
-        });
-      }
-
+    // Ensure user has a stripe customer ID
+    let customerId = user.subscription.stripeCustomerId;
+    if (!customerId) {
       try {
-        // Create Stripe customer
         const customer = await stripe.customers.create({
           email: user.email,
           name: `${user.firstName} ${user.lastName}`,
           metadata: {
-            userId: user._id.toString(),
-            organizationType: user.organizationType
+            userId: user._id.toString()
           }
         });
-
-        user.subscription.stripeCustomerId = customer.id;
+        customerId = customer.id;
+        user.subscription.stripeCustomerId = customerId;
+        await user.save();
       } catch (stripeError) {
-        console.error('Stripe error:', stripeError);
-        return res.status(400).json({
-          success: false,
-          message: 'Payment processing failed',
-          error: stripeError.message
-        });
+        console.error('Stripe customer creation error:', stripeError);
+        return res.status(500).json({ success: false, message: 'Failed to initialize payment system' });
       }
     }
 
-    // Update subscription
-    user.subscription.tier = newTier;
-    user.subscription.status = 'active';
-    user.subscription.startDate = new Date();
-    user.subscription.renewalDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-    // Reset usage metrics for new tier
-    user.usageMetrics.simulationsUsedToday = 0;
-    user.usageMetrics.simulationsUsedThisMonth = 0;
-    user.usageMetrics.moleculesCreatedThisMonth = 0;
-
-    await user.save();
+    // Create Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: SUBSCRIPTION_TIERS[tierId].currency.toLowerCase(),
+            product_data: {
+              name: `Vitalis AI - ${SUBSCRIPTION_TIERS[tierId].name} Plan`,
+              description: SUBSCRIPTION_TIERS[tierId].description,
+            },
+            unit_amount: Math.round(SUBSCRIPTION_TIERS[tierId].price * 100), // convert to cents
+            recurring: { interval: 'month' }
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${FRONTEND_URL}/workspace?session_id={CHECKOUT_SESSION_ID}&upgrade_success=true`,
+      cancel_url: `${FRONTEND_URL}/pricing?upgrade_cancelled=true`,
+      metadata: {
+        userId: user._id.toString(),
+        tier: tierId
+      }
+    });
 
     res.json({
       success: true,
-      message: `Successfully upgraded to ${SUBSCRIPTION_TIERS[newTier].name}`,
-      data: {
-        tier: user.subscription.tier,
-        status: user.subscription.status,
-        renewalDate: user.subscription.renewalDate,
-        price: SUBSCRIPTION_TIERS[newTier].price,
-        currency: SUBSCRIPTION_TIERS[newTier].currency
-      }
+      url: session.url
     });
   } catch (error) {
-    console.error('Upgrade error:', error);
+    console.error('Checkout session error:', error);
     res.status(500).json({
       success: false,
       message: error.message

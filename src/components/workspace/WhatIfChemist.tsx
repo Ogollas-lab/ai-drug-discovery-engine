@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, ArrowRight, TrendingUp, TrendingDown, Minus, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,37 +21,37 @@ const MODIFICATIONS: Modification[] = [
     label: "Add –F",
     description: "Fluorine increases metabolic stability & membrane permeability",
     icon: "F",
-    apply: (s) => s.replace(/C(=C|=O)?(\)|\])?$/, "C(F)$1$2") || s + "F",
+    apply: (s) => { const r = s.replace(/C(=C|=O)?(\)|\])?$/, "C(F)$1$2"); return r !== s ? r : s + "F"; }
   },
   {
     label: "Add –Cl",
     description: "Chlorine enhances lipophilicity & binding interactions",
     icon: "Cl",
-    apply: (s) => s.replace(/C(=C|=O)?(\)|\])?$/, "C(Cl)$1$2") || s + "Cl",
+    apply: (s) => { const r = s.replace(/C(=C|=O)?(\)|\])?$/, "C(Cl)$1$2"); return r !== s ? r : s + "Cl"; }
   },
   {
     label: "Add –OH",
     description: "Hydroxyl improves solubility but may reduce permeability",
     icon: "OH",
-    apply: (s) => s.replace(/C(\)|\])?$/, "C(O)$1") || s + "O",
+    apply: (s) => { const r = s.replace(/C(\)|\])?$/, "C(O)$1"); return r !== s ? r : s + "O"; }
   },
   {
     label: "Add –CH₃",
     description: "Methyl group blocks metabolism sites & increases lipophilicity",
     icon: "Me",
-    apply: (s) => s.replace(/C(\)|\])?$/, "C(C)$1") || s + "C",
+    apply: (s) => { const r = s.replace(/C(\)|\])?$/, "C(C)$1"); return r !== s ? r : s + "C"; }
   },
   {
     label: "Add –NH₂",
     description: "Amino group adds H-bond donors, may improve target engagement",
     icon: "NH₂",
-    apply: (s) => s.replace(/C(\)|\])?$/, "C(N)$1") || s + "N",
+    apply: (s) => { const r = s.replace(/C(\)|\])?$/, "C(N)$1"); return r !== s ? r : s + "N"; }
   },
   {
     label: "Add –CF₃",
     description: "Trifluoromethyl increases metabolic stability & lipophilicity",
     icon: "CF₃",
-    apply: (s) => s.replace(/C(\)|\])?$/, "C(C(F)(F)F)$1") || s + "C(F)(F)F",
+    apply: (s) => { const r = s.replace(/C(\)|\])?$/, "C(C(F)(F)F)$1"); return r !== s ? r : s + "C(F)(F)F"; }
   },
 ];
 
@@ -97,6 +97,12 @@ const WhatIfChemist = ({ currentSmiles, currentName }: WhatIfChemistProps) => {
   const [loading, setLoading] = useState(false);
   const [comparison, setComparison] = useState<ComparisonResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Clear local state when the active molecule changes
+  useEffect(() => {
+    setComparison(null);
+    setError(null);
+  }, [currentSmiles]);
 
   const applyModification = async (mod: Modification) => {
     if (!currentSmiles) return;

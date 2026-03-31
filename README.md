@@ -1,73 +1,70 @@
-# Welcome to your Lovable project
+# Vitalis AI 🧬
 
-## Project info
+An AI-powered, in-silico drug discovery platform designed specifically for researchers, institutions, and students in Kenya and across Africa. 
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 🌍 The Mission
+Historically, discovering life-saving drugs has taken 10+ years and billions of dollars in offshore labs. **Vitalis AI** is built to change the narrative. We bring computational drug discovery capabilities directly to local African researchers. By utilizing AI to predict molecular binding, screen virtual compounds, and analyze drug safety properties early, we make the drug discovery process **10x faster** and **1000x cheaper**.
 
-There are several ways of editing your application.
+## 🚀 Key Features
 
-**Use Lovable**
+* **AI Virtual Screening**: Rapidly predict and calculate molecule binding affinity against your chosen protein targets.
+* **Molecule Analyzer**: Interactively design, draw, and modify molecular structures. Uncover their properties immediately.
+* **Africa-Focused**: Prioritizes treatments for diseases critically affecting the African continent, such as Malaria, Tuberculosis, and more.
+* **Educational Classrooms**: Specific tools designed to help university students and educators learn drug discovery via practical, guided simulation tasks.
+* **Subscription & Workspaces**: Fully integrated tier-based subscription limits, team workflows, and comprehensive usage tracking.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## 🏗️ Architecture Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+This project is separated into a **Frontend** interface and a **Backend** server layer.
 
-**Use your preferred IDE**
+### Frontend
+- **Framework:** React + Vite + TypeScript
+- **Styling:** Tailwind CSS, shadcn-ui UI components
+- **Purpose:** Handles the workspace dashboard, interactive tutorials, educational flows, and complex UI like the Molecule Analyzer.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Backend
+- **Framework:** Node.js + Express.js
+- **Database:** MongoDB (using Mongoose)
+- **Purpose:** Securely processes JWT Authentication, Stripe Subscriptions integrations, usage metering, and handles AI API bindings to molecule/prediction engines.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 💻 Getting Started (Local Development)
 
+### Prerequisites:
+- **Node.js** & **npm** installed
+- **MongoDB** running (either locally or via MongoDB Atlas)
+
+### 1. Structure
+Navigate into either the root (frontend) or `backend` folder depending on what you want to work on.
+
+### 2. Run the Backend Server
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+cd backend
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Make sure you setup your .env file inside backend!
+npm start
+```
+The backend server will typically start on `http://localhost:5000`.
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 3. Run the Frontend App
+Open a new terminal session and navigate to the project root:
+```sh
+npm install
 npm run dev
 ```
+The frontend Vite server will be available on `http://localhost:8080` (or another port output by Vite).
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🗺️ Project Status & Roadmap
 
-**Use GitHub Codespaces**
+Currently, Vitalis AI features a nearly 100% complete and robust backend boilerplate, while the frontend UI remains in a prototype phase using static mock data.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Current Active Goals:**
+1. **API Integration**: Connect the frontend to the backend so the UI is driven by live MongoDB data instead of hardcoded objects.
+2. **Secure Payments & Auth**: Ensure Stripe subscription upgrades and JWT token authentication are verified accurately through the backend route barriers.
+3. **UX Overhaul**: Modify the design and copy to strictly reflect our focus on the African health use-case.

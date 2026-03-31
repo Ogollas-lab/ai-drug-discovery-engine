@@ -28,7 +28,8 @@ const predictionSchema = new mongoose.Schema({
           predictedKd: Number,
           confidence: Number
         }
-      ]
+      ],
+      xai: mongoose.Schema.Types.Mixed
     },
 
     // Toxicity Assessment
@@ -42,7 +43,8 @@ const predictionSchema = new mongoose.Schema({
           risk: String // 'low', 'medium', 'high'
         }
       ],
-      flags: [String]
+      flags: [String],
+      xai: mongoose.Schema.Types.Mixed
     },
 
     // ADME Properties
@@ -52,7 +54,8 @@ const predictionSchema = new mongoose.Schema({
       metabolism: { value: Number, confidence: Number },
       excretion: { value: Number, confidence: Number },
       bloodBrainBarrier: { value: Boolean, confidence: Number },
-      halfLife: { value: Number, unit: String, confidence: Number }
+      halfLife: { value: Number, unit: String, confidence: Number },
+      xai: mongoose.Schema.Types.Mixed
     },
 
     // Synthesizability

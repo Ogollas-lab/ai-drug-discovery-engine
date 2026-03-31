@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SAMPLE_MOLECULES, generateMoleculeResultReal, type MoleculeResult, type TargetInfo } from "@/data/targets";
 import ConceptTooltip from "@/components/ConceptTooltip";
+import AIReasoningPanel from "./AIReasoningPanel";
 
 interface WorkspaceAnalyzerProps {
   selectedTarget: TargetInfo | null;
@@ -64,7 +65,24 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
 
         {/* Sample molecules */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {Object.entries(SAMPLE_MOLECULES).map(([s, { name }]) => (
+          {Object.entries(SAMPLE_MOLECULES)
+            .filter(([_, mol]) => {
+              // If no target selected, show all
+              if (!selectedTarget) return true;
+              // If selected, filter by intersecting tags (e.g. oncology, pain, cardiology)
+              return mol.tags.some((tag) => selectedTarget.tags.includes(tag));
+            })
+            // Fallback: If the filter resulted in 0 matches, just show all of them so the UI isn't empty
+            .concat(
+              Object.entries(SAMPLE_MOLECULES).filter(() => {
+                if (!selectedTarget) return false;
+                const matches = Object.values(SAMPLE_MOLECULES).filter(m => m.tags.some(t => selectedTarget.tags.includes(t)));
+                return matches.length === 0;
+              })
+            )
+            // Remove duplicates efficiently
+            .filter((v, i, a) => a.findIndex(t => t[0] === v[0]) === i)
+            .map(([s, { name }]) => (
             <button
               key={s}
               onClick={() => loadSample(s)}
@@ -163,6 +181,16 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
                   <p className="text-[10px] text-muted-foreground">
                     Score ranges 0–1. Higher = stronger predicted binding. Affinity is model-estimated; physicochemical properties are from PubChem.
                   </p>
+                )}
+
+                {/* Explainable AI (XAI) Panel */}
+                {result.xai && (
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <AIReasoningPanel 
+                      reasoning={result.xai.reasoning}
+                      topFeatures={result.xai.topFeatures}
+                    />
+                  </div>
                 )}
               </div>
 
