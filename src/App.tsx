@@ -13,6 +13,7 @@ import Benchmarks from "./pages/Benchmarks";
 import Classroom from "./pages/Classroom";
 import Pricing from "./pages/Pricing";
 import AdminDashboard from "./pages/AdminDashboard";
+import Predictions from "./pages/Predictions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/workspace" element={<Workspace />} />
               <Route path="/screening" element={<Screening />} />
+              <Route path="/predictions" element={<Predictions />} />
               <Route path="/education" element={<Education />} />
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/classroom" element={<Classroom />} />
