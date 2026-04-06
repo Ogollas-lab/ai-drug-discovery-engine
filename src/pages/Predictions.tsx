@@ -128,6 +128,17 @@ const Predictions = () => {
           {/* Results */}
           {prediction && !loading && (
             <div className="space-y-6">
+              {/* Export buttons */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => exportPredictionCSV(moleculeName, prediction)}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                  Export CSV
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => exportPredictionPDF(moleculeName, prediction)}>
+                  <FileText className="h-3.5 w-3.5 mr-1.5" />
+                  Export PDF
+                </Button>
+              </div>
               {/* Top row: 3 gauges + verdict */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <PredictionGauge
