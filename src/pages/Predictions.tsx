@@ -15,6 +15,7 @@ import FeatureWaterfall from "@/components/predictions/FeatureWaterfall";
 import ModelMetricsPanel from "@/components/predictions/ModelMetricsPanel";
 import RiskPanel from "@/components/predictions/RiskPanel";
 import BatchRunner from "@/components/predictions/BatchRunner";
+import MoleculeComparison from "@/components/predictions/MoleculeComparison";
 import { Search, FlaskConical, Loader2, Sparkles, TrendingUp, Shield, AlertTriangle } from "lucide-react";
 
 const SAMPLE_MOLECULES = [
@@ -165,11 +166,12 @@ const Predictions = () => {
 
               {/* Tabs for details */}
               <Tabs defaultValue="features" className="w-full">
-                <TabsList className="grid grid-cols-4 w-full max-w-lg">
+                <TabsList className="grid grid-cols-5 w-full max-w-2xl">
                   <TabsTrigger value="features">Features</TabsTrigger>
                   <TabsTrigger value="risks">Risks</TabsTrigger>
                   <TabsTrigger value="model">Model</TabsTrigger>
                   <TabsTrigger value="batch">Batch</TabsTrigger>
+                  <TabsTrigger value="compare">Compare</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="features">
@@ -189,6 +191,10 @@ const Predictions = () => {
 
                 <TabsContent value="batch">
                   <BatchRunner sampleMolecules={SAMPLE_MOLECULES} />
+                </TabsContent>
+
+                <TabsContent value="compare">
+                  <MoleculeComparison sampleMolecules={SAMPLE_MOLECULES} />
                 </TabsContent>
               </Tabs>
             </div>
