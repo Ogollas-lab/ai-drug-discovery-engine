@@ -16,7 +16,8 @@ import ModelMetricsPanel from "@/components/predictions/ModelMetricsPanel";
 import RiskPanel from "@/components/predictions/RiskPanel";
 import BatchRunner from "@/components/predictions/BatchRunner";
 import MoleculeComparison from "@/components/predictions/MoleculeComparison";
-import { Search, FlaskConical, Loader2, Sparkles, TrendingUp, Shield, AlertTriangle } from "lucide-react";
+import { Search, FlaskConical, Loader2, Sparkles, TrendingUp, Shield, AlertTriangle, Download, FileText } from "lucide-react";
+import { exportPredictionCSV, exportPredictionPDF } from "@/lib/export-predictions";
 
 const SAMPLE_MOLECULES = [
   { name: "Aspirin", smiles: "CC(=O)OC1=CC=CC=C1C(=O)O" },
