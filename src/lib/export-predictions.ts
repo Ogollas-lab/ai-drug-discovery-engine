@@ -1,0 +1,126 @@
+import { type PredictionOutput } from "@/lib/drug-prediction";
+
+export function exportPredictionCSV(moleculeName: string, prediction: PredictionOutput) {
+  const rows: string[][] = [
+    ["Metric", "Value"],
+    ["Molecule", moleculeName],
+    ["Overall Score", `${prediction.overallScore}%`],
+    ["Efficacy Score", `${prediction.efficacyScore}%`],
+    ["Safety Score", `${prediction.safetyScore}%`],
+    ["Confidence", `${prediction.confidence}%`],
+    ["Verdict", prediction.verdict],
+    [],
+    ["Feature", "Value", "Weight", "Impact", "Description"],
+    ...prediction.featureContributions.map((f) => [
+      f.feature,
+      String(f.value),
+      String(f.weight),
+      f.impact,
+      f.description,
+    ]),
+    [],
+    ["Risk Flags"],
+    ...(prediction.riskFlags.length > 0
+      ? prediction.riskFlags.map((r) => [r])
+      : [["None"]]),
+    [],
+    ["Recommendations"],
+    ...prediction.recommendations.map((r) => [r]),
+    [],
+    ["Model Metrics"],
+    ["Accuracy", String(prediction.modelMetrics.accuracy)],
+    ["Precision", String(prediction.modelMetrics.precision)],
+    ["Recall", String(prediction.modelMetrics.recall)],
+    ["F1 Score", String(prediction.modelMetrics.f1Score)],
+    ["AUC", String(prediction.modelMetrics.auc)],
+    ["Data Points", String(prediction.modelMetrics.dataPoints)],
+  ];
+
+  const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+  download(csv, `${moleculeName}_prediction.csv`, "text/csv");
+}
+
+export function exportPredictionPDF(moleculeName: string, prediction: PredictionOutput) {
+  // Build a printable HTML document and trigger browser print-to-PDF
+  const verdictColor =
+    prediction.verdict === "High Potential" ? "#10b981" :
+    prediction.verdict === "Fail" ? "#ef4444" : "#a1a1aa";
+
+  const featuresRows = prediction.featureContributions
+    .map(
+      (f) =>
+        `<tr><td>${f.feature}</td><td>${f.value}</td><td>${f.weight}</td><td style="color:${f.impact === "positive" ? "#10b981" : f.impact === "negative" ? "#ef4444" : "#a1a1aa"}">${f.impact}</td><td>${f.description}</td></tr>`
+    )
+    .join("");
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${moleculeName} – Drug Prediction Report</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:40px 24px;color:#1a1a1a;font-size:13px}
+  h1{font-size:22px;margin-bottom:4px}
+  h2{font-size:15px;margin-top:28px;border-bottom:1px solid #ddd;padding-bottom:4px}
+  .scores{display:flex;gap:24px;margin:16px 0}
+  .score-box{text-align:center;flex:1;padding:16px;border:1px solid #ddd;border-radius:8px}
+  .score-box .val{font-size:28px;font-weight:bold}
+  .score-box .lbl{font-size:11px;color:#666;margin-top:4px}
+  .verdict{display:inline-block;padding:6px 16px;border-radius:6px;font-weight:bold;color:#fff;background:${verdictColor}}
+  table{width:100%;border-collapse:collapse;margin:8px 0}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee;font-size:12px}
+  th{background:#f5f5f5;font-weight:600}
+  ul{padding-left:20px}
+  li{margin-bottom:4px}
+  .meta{color:#888;font-size:11px;margin-top:32px}
+  @media print{body{padding:20px}}
+</style></head><body>
+<h1>Drug Success Prediction Report</h1>
+<p style="color:#666">Molecule: <strong>${moleculeName}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()}</p>
+
+<div class="scores">
+  <div class="score-box"><div class="val">${prediction.overallScore}%</div><div class="lbl">Overall</div></div>
+  <div class="score-box"><div class="val">${prediction.efficacyScore}%</div><div class="lbl">Efficacy</div></div>
+  <div class="score-box"><div class="val">${prediction.safetyScore}%</div><div class="lbl">Safety</div></div>
+  <div class="score-box"><div class="val">${prediction.confidence}%</div><div class="lbl">Confidence</div></div>
+</div>
+<p>Verdict: <span class="verdict">${prediction.verdict}</span></p>
+
+<h2>Feature Contributions</h2>
+<table><thead><tr><th>Feature</th><th>Value</th><th>Weight</th><th>Impact</th><th>Description</th></tr></thead><tbody>${featuresRows}</tbody></table>
+
+<h2>Risk Flags</h2>
+${prediction.riskFlags.length > 0 ? `<ul>${prediction.riskFlags.map((r) => `<li>${r}</li>`).join("")}</ul>` : "<p>No risk flags detected.</p>"}
+
+<h2>Recommendations</h2>
+<ul>${prediction.recommendations.map((r) => `<li>${r}</li>`).join("")}</ul>
+
+<h2>Model Metrics</h2>
+<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>
+<tr><td>Accuracy</td><td>${prediction.modelMetrics.accuracy}</td></tr>
+<tr><td>Precision</td><td>${prediction.modelMetrics.precision}</td></tr>
+<tr><td>Recall</td><td>${prediction.modelMetrics.recall}</td></tr>
+<tr><td>F1 Score</td><td>${prediction.modelMetrics.f1Score}</td></tr>
+<tr><td>AUC-ROC</td><td>${prediction.modelMetrics.auc}</td></tr>
+<tr><td>Training Data Points</td><td>${prediction.modelMetrics.dataPoints.toLocaleString()}</td></tr>
+</tbody></table>
+
+<p class="meta">Generated by ISDE – In-Silico Drug Discovery Engine. Powered by PubChem data and Lipinski/Veber/ADMET scoring models.</p>
+</body></html>`;
+
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (win) {
+    win.addEventListener("load", () => {
+      win.print();
+      URL.revokeObjectURL(url);
+    });
+  }
+}
+
+function download(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
