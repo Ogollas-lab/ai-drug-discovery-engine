@@ -8,6 +8,7 @@ const navItems = [
   { label: "Screening", path: "/screening" },
   { label: "Predictions", path: "/predictions" },
   { label: "Learn", path: "/education" },
+  { label: "Pipeline", path: "/pipeline" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
