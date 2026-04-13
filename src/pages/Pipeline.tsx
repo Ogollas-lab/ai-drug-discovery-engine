@@ -3,8 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Target, Search, FlaskConical, Microscope, Beaker, ShieldCheck,
   Users, Building2, ArrowRight, Clock, DollarSign, TrendingUp,
-  AlertTriangle, CheckCircle, ChevronDown, ChevronUp, ExternalLink
+  AlertTriangle, CheckCircle, ChevronDown, ChevronUp, ExternalLink, Info
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -288,47 +294,92 @@ const Pipeline = () => {
             </h3>
             <div className="flex flex-col items-center gap-0">
               {[
-                { label: "Initial Compounds", count: "10,000", percent: 100, stage: "Library Screening" },
-                { label: "Primary Hits", count: "250", percent: 60, stage: "HTS & Virtual Screening" },
-                { label: "Confirmed Hits", count: "50", percent: 45, stage: "Hit Validation" },
-                { label: "Lead Candidates", count: "10", percent: 32, stage: "Lead Optimization" },
-                { label: "Preclinical Candidates", count: "5", percent: 22, stage: "Preclinical Testing" },
-                { label: "Enter Clinical Trials", count: "2", percent: 15, stage: "Phase I–III" },
-                { label: "Approved Drug", count: "1", percent: 10, stage: "Regulatory Approval" },
+                { label: "Initial Compounds", count: "10,000", percent: 100, stage: "Library Screening",
+                  reasons: ["Diverse chemical libraries screened for any target activity", "Includes natural products, synthetics, and virtual libraries"],
+                  example: "GSK screened 2M compounds against P. falciparum, yielding ~13,500 hits (the Tres Cantos Antimalarial Set)." },
+                { label: "Primary Hits", count: "250", percent: 60, stage: "HTS & Virtual Screening",
+                  reasons: ["~97% eliminated due to weak binding affinity (IC₅₀ > 10 µM)", "Assay artifacts and false positives filtered out"],
+                  example: "Novartis screened 1.7M compounds for TB; only 700 showed confirmed activity against M. tuberculosis." },
+                { label: "Confirmed Hits", count: "50", percent: 45, stage: "Hit Validation",
+                  reasons: ["Poor selectivity — compounds hit off-target proteins", "Chemical instability or reactive functional groups"],
+                  example: "The MMV Malaria Box distilled 20,000 hits down to 400 validated, drug-like compounds for global research." },
+                { label: "Lead Candidates", count: "10", percent: 32, stage: "Lead Optimization",
+                  reasons: ["ADMET failures: poor absorption, rapid metabolism, or toxicity", "Inability to achieve oral bioavailability"],
+                  example: "Pfizer's amodiaquine analogs were abandoned after CYP450-mediated hepatotoxicity was identified during optimization." },
+                { label: "Preclinical Candidates", count: "5", percent: 22, stage: "Preclinical Testing",
+                  reasons: ["Animal model toxicity not predicted by in vitro assays", "Lack of efficacy in disease-relevant animal models"],
+                  example: "~40% of oncology candidates fail preclinical due to poor tumor-model translation (Nature Reviews Drug Discovery, 2022)." },
+                { label: "Enter Clinical Trials", count: "2", percent: 15, stage: "Phase I–III",
+                  reasons: ["Phase II is the highest-risk stage (~67% failure rate)", "Efficacy in patients doesn't match preclinical promise"],
+                  example: "BMS's BMS-986094 (Hepatitis C) was terminated in Phase II after fatal cardiac toxicity in one patient." },
+                { label: "Approved Drug", count: "1", percent: 10, stage: "Regulatory Approval",
+                  reasons: ["Regulatory concerns about risk-benefit profile", "Manufacturing scale-up challenges or impurity control"],
+                  example: "Artemisinin combination therapies (ACTs) achieved WHO prequalification, becoming the gold standard for African malaria treatment." },
               ].map((step, i, arr) => (
-                <motion.div
-                  key={step.label}
-                  initial={{ opacity: 0, scaleX: 0 }}
-                  whileInView={{ opacity: 1, scaleX: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08, duration: 0.4 }}
-                  className="relative group"
-                  style={{ width: `${step.percent}%`, minWidth: "120px" }}
-                >
-                  <div
-                    className={`relative px-4 py-2.5 text-center transition-all duration-300 border-x border-t ${
-                      i === arr.length - 1 ? "border-b rounded-b-xl" : ""
-                    } ${i === 0 ? "rounded-t-xl" : ""} ${
-                      i === arr.length - 1
-                        ? "bg-primary/20 border-primary/40"
-                        : "bg-primary/5 border-primary/15 hover:bg-primary/10"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-muted-foreground font-mono truncate">{step.stage}</span>
-                      <span className="text-xs font-mono font-bold text-primary">{step.count}</span>
-                    </div>
-                    <div className="text-[11px] font-medium text-foreground mt-0.5">{step.label}</div>
-                    {i < arr.length - 1 && (
-                      <div className="absolute -bottom-px left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-primary/20 z-10" />
-                    )}
-                  </div>
-                </motion.div>
+                <TooltipProvider key={step.label} delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <motion.div
+                        initial={{ opacity: 0, scaleX: 0 }}
+                        whileInView={{ opacity: 1, scaleX: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: i * 0.08, duration: 0.4 }}
+                        className="relative group cursor-pointer"
+                        style={{ width: `${step.percent}%`, minWidth: "120px" }}
+                      >
+                        <div
+                          className={`relative px-4 py-2.5 text-center transition-all duration-300 border-x border-t ${
+                            i === arr.length - 1 ? "border-b rounded-b-xl" : ""
+                          } ${i === 0 ? "rounded-t-xl" : ""} ${
+                            i === arr.length - 1
+                              ? "bg-primary/20 border-primary/40"
+                              : "bg-primary/5 border-primary/15 hover:bg-primary/10"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-muted-foreground font-mono truncate">{step.stage}</span>
+                            <div className="flex items-center gap-1.5">
+                              <Info className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <span className="text-xs font-mono font-bold text-primary">{step.count}</span>
+                            </div>
+                          </div>
+                          <div className="text-[11px] font-medium text-foreground mt-0.5">{step.label}</div>
+                          {i < arr.length - 1 && (
+                            <div className="absolute -bottom-px left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-primary/20 z-10" />
+                          )}
+                        </div>
+                      </motion.div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs p-0 bg-background border border-border/80">
+                      <div className="p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono font-bold text-primary">{step.count}</span>
+                          <span className="text-xs font-semibold text-foreground">{step.label}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono text-destructive uppercase tracking-wider">Why compounds drop out</span>
+                          <ul className="mt-1 space-y-1">
+                            {step.reasons.map((r, j) => (
+                              <li key={j} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                                <AlertTriangle className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
+                                {r}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="pt-1.5 border-t border-border/50">
+                          <span className="text-[10px] font-mono text-primary uppercase tracking-wider">Real-world example</span>
+                          <p className="text-[11px] text-foreground/80 mt-1 leading-relaxed">{step.example}</p>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
             </div>
             <p className="text-[11px] text-muted-foreground text-center mt-3 max-w-md mx-auto">
               On average, only <span className="text-primary font-semibold">0.01%</span> of initially screened compounds
-              survive the full pipeline to become an approved medicine.
+              survive the full pipeline. <span className="text-muted-foreground/70">Hover each stage for details.</span>
             </p>
           </motion.div>
 
