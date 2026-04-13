@@ -276,6 +276,62 @@ const Pipeline = () => {
             ))}
           </div>
 
+          {/* Attrition Funnel */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-8"
+          >
+            <h3 className="text-xs font-mono text-primary tracking-[0.3em] uppercase text-center mb-4">
+              Attrition Funnel — From 10,000 Compounds to 1 Approved Drug
+            </h3>
+            <div className="flex flex-col items-center gap-0">
+              {[
+                { label: "Initial Compounds", count: "10,000", percent: 100, stage: "Library Screening" },
+                { label: "Primary Hits", count: "250", percent: 60, stage: "HTS & Virtual Screening" },
+                { label: "Confirmed Hits", count: "50", percent: 45, stage: "Hit Validation" },
+                { label: "Lead Candidates", count: "10", percent: 32, stage: "Lead Optimization" },
+                { label: "Preclinical Candidates", count: "5", percent: 22, stage: "Preclinical Testing" },
+                { label: "Enter Clinical Trials", count: "2", percent: 15, stage: "Phase I–III" },
+                { label: "Approved Drug", count: "1", percent: 10, stage: "Regulatory Approval" },
+              ].map((step, i, arr) => (
+                <motion.div
+                  key={step.label}
+                  initial={{ opacity: 0, scaleX: 0 }}
+                  whileInView={{ opacity: 1, scaleX: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08, duration: 0.4 }}
+                  className="relative group"
+                  style={{ width: `${step.percent}%`, minWidth: "120px" }}
+                >
+                  <div
+                    className={`relative px-4 py-2.5 text-center transition-all duration-300 border-x border-t ${
+                      i === arr.length - 1 ? "border-b rounded-b-xl" : ""
+                    } ${i === 0 ? "rounded-t-xl" : ""} ${
+                      i === arr.length - 1
+                        ? "bg-primary/20 border-primary/40"
+                        : "bg-primary/5 border-primary/15 hover:bg-primary/10"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-muted-foreground font-mono truncate">{step.stage}</span>
+                      <span className="text-xs font-mono font-bold text-primary">{step.count}</span>
+                    </div>
+                    <div className="text-[11px] font-medium text-foreground mt-0.5">{step.label}</div>
+                    {i < arr.length - 1 && (
+                      <div className="absolute -bottom-px left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-primary/20 z-10" />
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center mt-3 max-w-md mx-auto">
+              On average, only <span className="text-primary font-semibold">0.01%</span> of initially screened compounds
+              survive the full pipeline to become an approved medicine.
+            </p>
+          </motion.div>
+
           {/* Progress Bar */}
           <div className="mb-2">
             <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-1">
