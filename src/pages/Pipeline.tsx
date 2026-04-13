@@ -3,8 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Target, Search, FlaskConical, Microscope, Beaker, ShieldCheck,
   Users, Building2, ArrowRight, Clock, DollarSign, TrendingUp,
-  AlertTriangle, CheckCircle, ChevronDown, ChevronUp, ExternalLink
+  AlertTriangle, CheckCircle, ChevronDown, ChevronUp, ExternalLink, Info
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
