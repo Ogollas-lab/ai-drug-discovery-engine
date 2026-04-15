@@ -9,6 +9,7 @@ const navItems = [
   { label: "Predictions", path: "/predictions" },
   { label: "Learn", path: "/education" },
   { label: "Pipeline", path: "/pipeline" },
+  { label: "XAI", path: "/xai" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
