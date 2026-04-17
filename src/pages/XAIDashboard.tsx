@@ -13,6 +13,7 @@ import { BarChart3, Eye, Shield, TrendingUp, GitCompare, Download } from "lucide
 import { useToast } from "@/hooks/use-toast";
 
 import { SHAPWaterfall } from "@/components/xai/SHAPWaterfall";
+import { SHAPBeeswarm } from "@/components/xai/SHAPBeeswarm";
 import { LIMEWeights } from "@/components/xai/LIMEWeights";
 import { ConfidencePanel } from "@/components/xai/ConfidencePanel";
 import { DecisionPathway } from "@/components/xai/DecisionPathway";
@@ -270,6 +271,9 @@ const XAIDashboard = () => {
                 <TabsTrigger value="compare" className="text-xs gap-1.5">
                   <GitCompare className="w-3.5 h-3.5" /> Compare
                 </TabsTrigger>
+                <TabsTrigger value="global" className="text-xs gap-1.5">
+                  <Activity className="w-3.5 h-3.5" /> Global SHAP
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="shap">
@@ -315,6 +319,10 @@ const XAIDashboard = () => {
                 <div className="max-w-lg">
                   <MoleculeComparisonPanel currentMolecule={selectedMolecule} />
                 </div>
+              </TabsContent>
+
+              <TabsContent value="global">
+                <SHAPBeeswarm />
               </TabsContent>
             </Tabs>
 
