@@ -16,6 +16,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Predictions from "./pages/Predictions";
 import Pipeline from "./pages/Pipeline";
 import XAIDashboard from "./pages/XAIDashboard";
+import Grounding from "./pages/Grounding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/education" element={<Education />} />
               <Route path="/pipeline" element={<Pipeline />} />
               <Route path="/xai" element={<XAIDashboard />} />
+              <Route path="/grounding" element={<Grounding />} />
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/classroom" element={<Classroom />} />
               <Route path="/pricing" element={<Pricing />} />

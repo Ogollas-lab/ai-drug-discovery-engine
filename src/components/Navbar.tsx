@@ -10,6 +10,7 @@ const navItems = [
   { label: "Learn", path: "/education" },
   { label: "Pipeline", path: "/pipeline" },
   { label: "XAI", path: "/xai" },
+  { label: "Grounding", path: "/grounding" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
