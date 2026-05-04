@@ -11,6 +11,7 @@ const navItems = [
   { label: "Pipeline", path: "/pipeline" },
   { label: "XAI", path: "/xai" },
   { label: "Grounding", path: "/grounding" },
+  { label: "Fit", path: "/compatibility" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
