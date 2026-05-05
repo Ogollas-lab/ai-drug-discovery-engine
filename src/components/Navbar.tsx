@@ -12,6 +12,7 @@ const navItems = [
   { label: "XAI", path: "/xai" },
   { label: "Grounding", path: "/grounding" },
   { label: "Fit", path: "/compatibility" },
+  { label: "Binding", path: "/binding" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
