@@ -19,6 +19,7 @@ import XAIDashboard from "./pages/XAIDashboard";
 import Grounding from "./pages/Grounding";
 import Compatibility from "./pages/Compatibility";
 import BindingRealism from "./pages/BindingRealism";
+import Datasets from "./pages/Datasets";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/grounding" element={<Grounding />} />
               <Route path="/compatibility" element={<Compatibility />} />
               <Route path="/binding" element={<BindingRealism />} />
+              <Route path="/datasets" element={<Datasets />} />
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/classroom" element={<Classroom />} />
               <Route path="/pricing" element={<Pricing />} />

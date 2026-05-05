@@ -13,6 +13,7 @@ const navItems = [
   { label: "Grounding", path: "/grounding" },
   { label: "Fit", path: "/compatibility" },
   { label: "Binding", path: "/binding" },
+  { label: "Datasets", path: "/datasets" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
