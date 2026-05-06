@@ -15,6 +15,7 @@ const navItems = [
   { label: "Binding", path: "/binding" },
   { label: "Datasets", path: "/datasets" },
   { label: "GAT", path: "/gat" },
+  { label: "Validation", path: "/validation" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
