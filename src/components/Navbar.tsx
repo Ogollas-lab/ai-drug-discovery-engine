@@ -14,6 +14,7 @@ const navItems = [
   { label: "Fit", path: "/compatibility" },
   { label: "Binding", path: "/binding" },
   { label: "Datasets", path: "/datasets" },
+  { label: "GAT", path: "/gat" },
   { label: "Benchmarks", path: "/benchmarks" },
   { label: "Classroom", path: "/classroom" },
   { label: "Pricing", path: "/pricing" },
