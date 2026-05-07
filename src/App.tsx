@@ -22,6 +22,7 @@ import BindingRealism from "./pages/BindingRealism";
 import Datasets from "./pages/Datasets";
 import GATPredictor from "./pages/GATPredictor";
 import Validation from "./pages/Validation";
+import Training from "./pages/Training";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/datasets" element={<Datasets />} />
               <Route path="/gat" element={<GATPredictor />} />
               <Route path="/validation" element={<Validation />} />
+              <Route path="/training" element={<Training />} />
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/classroom" element={<Classroom />} />
               <Route path="/pricing" element={<Pricing />} />

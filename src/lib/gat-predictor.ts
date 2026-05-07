@@ -5,6 +5,7 @@
 //  - NO words like "strong binding" / "weak binding" anywhere in output.
 
 import { fetchPubChemBySMILES, fetchPubChemByName, type PubChemResult } from "./pubchem";
+import { applyCalibration } from "./training-pipeline";
 
 export type Uncertainty = "Low" | "Medium" | "High";
 
@@ -101,7 +102,8 @@ function ensembleForward(
   for (let i = 0; i < samples; i++) {
     // MC-dropout style noise.
     const noise = (rand() - 0.5) * 1.4;
-    out.push(sigmoid(logitBase + noise));
+    // Apply trained calibration (scale + bias) from the training pipeline.
+    out.push(applyCalibration(sigmoid(logitBase + noise)));
   }
   return out;
 }
