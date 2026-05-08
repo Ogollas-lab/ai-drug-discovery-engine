@@ -45,12 +45,13 @@ const estimateMagnitude = (feature: string, actualValue: string): number => {
   return Math.min(1, Math.abs(num) / 10);
 };
 
-// Color from blue (low) -> purple -> red (high), HSL via theme tokens
+// High-contrast diverging palette: low feature value = bright cyan, high = vivid magenta/red.
+// Uses higher lightness + saturation for visibility on the dark biotech background.
 const colorForMagnitude = (m: number) => {
-  // Interpolate hue between primary (~155 green-cyan) and destructive (~0 red)
-  // Using fixed HSL values matching biotech palette: low = cyan, high = magenta/red
-  const hue = 200 - m * 200; // 200 (cyan) -> 0 (red)
-  return `hsl(${hue}, 75%, 55%)`;
+  // 195 (cyan) -> 320 (magenta) gives strong perceptual contrast on dark bg
+  const hue = 195 + m * 125;
+  const light = 60 + (1 - Math.abs(0.5 - m) * 2) * 8; // brighter at extremes
+  return `hsl(${hue}, 90%, ${light}%)`;
 };
 
 export const SHAPBeeswarm = () => {
