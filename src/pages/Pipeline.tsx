@@ -350,7 +350,7 @@ const Pipeline = () => {
                         </div>
                       </motion.div>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs p-0 bg-background border border-border/80">
+                    <TooltipContent side="top" align="center" sideOffset={8} collisionPadding={16} avoidCollisions className="max-w-xs p-0 bg-background border border-border/80 shadow-xl z-50">
                       <div className="p-3 space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-mono font-bold text-primary">{step.count}</span>
