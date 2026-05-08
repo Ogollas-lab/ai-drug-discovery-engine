@@ -250,123 +250,141 @@ export const SHAPBeeswarm = () => {
             No molecules selected. Pick at least one from the filter above.
           </div>
         ) : view === "beeswarm" ? (
-          <TooltipProvider delayDuration={50}>
-            <div className="w-full overflow-x-auto">
-              <svg
-                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="w-full min-w-[640px] h-auto"
-                role="img"
-                aria-label="SHAP beeswarm summary plot"
+          <div className="relative w-full overflow-x-auto" ref={containerRef}>
+            <svg
+              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+              className="w-full min-w-[640px] h-auto"
+              role="img"
+              aria-label="SHAP beeswarm summary plot"
+              onMouseLeave={() => setHovered(null)}
+            >
+              {/* Zero line */}
+              <line
+                x1={padding.left + innerWidth / 2}
+                y1={padding.top}
+                x2={padding.left + innerWidth / 2}
+                y2={padding.top + innerHeight}
+                stroke="hsl(var(--border))"
+                strokeDasharray="3 3"
+              />
+              {/* Row labels & guide lines */}
+              {features.map((f, i) => {
+                const y = padding.top + i * rowHeight + rowHeight / 2;
+                return (
+                  <g key={f}>
+                    <line
+                      x1={padding.left}
+                      y1={y}
+                      x2={padding.left + innerWidth}
+                      y2={y}
+                      stroke="hsl(var(--border))"
+                      strokeOpacity={0.25}
+                    />
+                    <text
+                      x={padding.left - 8}
+                      y={y + 3}
+                      textAnchor="end"
+                      className="fill-foreground"
+                      style={{ fontSize: 10 }}
+                    >
+                      {f}
+                    </text>
+                  </g>
+                );
+              })}
+              {/* X axis */}
+              <line
+                x1={padding.left}
+                y1={padding.top + innerHeight + 4}
+                x2={padding.left + innerWidth}
+                y2={padding.top + innerHeight + 4}
+                stroke="hsl(var(--border))"
+              />
+              {[-maxAbs, -maxAbs / 2, 0, maxAbs / 2, maxAbs].map((v, i) => {
+                const x = xScale(v);
+                return (
+                  <g key={i}>
+                    <line x1={x} y1={padding.top + innerHeight + 4} x2={x} y2={padding.top + innerHeight + 8} stroke="hsl(var(--border))" />
+                    <text
+                      x={x}
+                      y={padding.top + innerHeight + 22}
+                      textAnchor="middle"
+                      className="fill-muted-foreground"
+                      style={{ fontSize: 9 }}
+                    >
+                      {v >= 0 ? "+" : ""}{(v * 100).toFixed(0)}%
+                    </text>
+                  </g>
+                );
+              })}
+              <text
+                x={padding.left + innerWidth / 2}
+                y={svgHeight - 4}
+                textAnchor="middle"
+                className="fill-muted-foreground"
+                style={{ fontSize: 10 }}
               >
-                {/* Zero line */}
-                <line
-                  x1={padding.left + innerWidth / 2}
-                  y1={padding.top}
-                  x2={padding.left + innerWidth / 2}
-                  y2={padding.top + innerHeight}
-                  stroke="hsl(var(--border))"
-                  strokeDasharray="3 3"
-                />
-                {/* Row labels & guide lines */}
-                {features.map((f, i) => {
-                  const y = padding.top + i * rowHeight + rowHeight / 2;
-                  return (
-                    <g key={f}>
-                      <line
-                        x1={padding.left}
-                        y1={y}
-                        x2={padding.left + innerWidth}
-                        y2={y}
-                        stroke="hsl(var(--border))"
-                        strokeOpacity={0.25}
-                      />
-                      <text
-                        x={padding.left - 8}
-                        y={y + 3}
-                        textAnchor="end"
-                        className="fill-foreground"
-                        style={{ fontSize: 10 }}
-                      >
-                        {f}
-                      </text>
-                    </g>
-                  );
-                })}
-                {/* X axis */}
-                <line
-                  x1={padding.left}
-                  y1={padding.top + innerHeight + 4}
-                  x2={padding.left + innerWidth}
-                  y2={padding.top + innerHeight + 4}
-                  stroke="hsl(var(--border))"
-                />
-                {[-maxAbs, -maxAbs / 2, 0, maxAbs / 2, maxAbs].map((v, i) => {
-                  const x = xScale(v);
-                  return (
-                    <g key={i}>
-                      <line x1={x} y1={padding.top + innerHeight + 4} x2={x} y2={padding.top + innerHeight + 8} stroke="hsl(var(--border))" />
-                      <text
-                        x={x}
-                        y={padding.top + innerHeight + 22}
-                        textAnchor="middle"
-                        className="fill-muted-foreground"
-                        style={{ fontSize: 9 }}
-                      >
-                        {v >= 0 ? "+" : ""}{(v * 100).toFixed(0)}%
-                      </text>
-                    </g>
-                  );
-                })}
-                <text
-                  x={padding.left + innerWidth / 2}
-                  y={svgHeight - 4}
-                  textAnchor="middle"
-                  className="fill-muted-foreground"
-                  style={{ fontSize: 10 }}
-                >
-                  SHAP value (impact on model output) →
-                </text>
+                SHAP value (impact on model output) →
+              </text>
 
-                {/* Beeswarm dots */}
-                {placedPoints.map((p, i) => (
-                  <Tooltip key={i}>
-                    <TooltipTrigger asChild>
-                      <motion.circle
-                        initial={{ opacity: 0, r: 0 }}
-                        animate={{ opacity: 0.85, r: 5 }}
-                        transition={{ delay: Math.min(i * 0.005, 0.4), duration: 0.3 }}
-                        cx={p.cx}
-                        cy={p.cy}
-                        fill={colorForMagnitude(p.magnitude)}
-                        stroke="hsl(var(--background))"
-                        strokeWidth={1}
-                        className="cursor-pointer hover:opacity-100"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-[11px] max-w-[260px]">
-                      <div className="font-semibold">{p.molecule}</div>
-                      <div className="text-muted-foreground">{p.feature}</div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <Badge variant={p.shapValue >= 0 ? "default" : "destructive"} className="text-[9px] px-1.5 py-0">
-                          SHAP {p.shapValue >= 0 ? "+" : ""}{(p.shapValue * 100).toFixed(1)}%
-                        </Badge>
-                        <span className="text-muted-foreground">Value: {p.actualValue}</span>
-                      </div>
-                      <div className="mt-1 text-muted-foreground italic">{p.explanation}</div>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </svg>
-            </div>
+              {/* Beeswarm dots */}
+              {placedPoints.map((p, i) => {
+                const isHovered = hovered && hovered.molecule === p.molecule && hovered.feature === p.feature && hovered.cx === p.cx && hovered.cy === p.cy;
+                return (
+                  <motion.circle
+                    key={i}
+                    initial={{ opacity: 0, r: 0 }}
+                    animate={{ opacity: isHovered ? 1 : 0.9, r: isHovered ? 8 : 6 }}
+                    transition={{ delay: Math.min(i * 0.005, 0.4), duration: 0.25 }}
+                    cx={p.cx}
+                    cy={p.cy}
+                    fill={colorForMagnitude(p.magnitude)}
+                    stroke={isHovered ? "hsl(var(--foreground))" : "hsl(var(--background))"}
+                    strokeWidth={isHovered ? 2 : 1.25}
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHovered(p)}
+                    onFocus={() => setHovered(p)}
+                    tabIndex={0}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Hover tooltip — positioned over SVG using viewBox-to-pixel ratio */}
+            {hovered && containerRef.current && (() => {
+              const rect = containerRef.current.querySelector("svg")!.getBoundingClientRect();
+              const scaleX = rect.width / svgWidth;
+              const scaleY = rect.height / svgHeight;
+              const left = hovered.cx * scaleX;
+              const top = hovered.cy * scaleY;
+              return (
+                <div
+                  className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full"
+                  style={{ left, top: top - 14 }}
+                >
+                  <div className="rounded-md border border-primary/40 bg-popover/95 backdrop-blur-md px-3 py-2 shadow-xl shadow-primary/20 text-[11px] max-w-[280px] whitespace-normal">
+                    <div className="font-semibold text-foreground">{hovered.molecule}</div>
+                    <div className="text-muted-foreground">{hovered.feature}</div>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap">
+                      <Badge variant={hovered.shapValue >= 0 ? "default" : "destructive"} className="text-[9px] px-1.5 py-0">
+                        SHAP {hovered.shapValue >= 0 ? "+" : ""}{(hovered.shapValue * 100).toFixed(1)}%
+                      </Badge>
+                      <span className="text-muted-foreground">Value: <span className="text-foreground">{hovered.actualValue}</span></span>
+                    </div>
+                    <div className="mt-1.5 text-muted-foreground italic leading-snug">{hovered.explanation}</div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Color legend */}
-            <div className="flex items-center justify-between flex-wrap gap-3 pt-2">
+            <div className="flex items-center justify-between flex-wrap gap-3 pt-3">
               <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                 <span>Feature value:</span>
                 <span>Low</span>
                 <div
                   className="h-2 w-32 rounded"
-                  style={{ background: "linear-gradient(to right, hsl(200,75%,55%), hsl(100,75%,55%), hsl(0,75%,55%))" }}
+                  style={{ background: "linear-gradient(to right, hsl(195,90%,65%), hsl(258,90%,65%), hsl(320,90%,65%))" }}
                 />
                 <span>High</span>
               </div>
@@ -375,7 +393,7 @@ export const SHAPBeeswarm = () => {
                 <span>Increases prediction →</span>
               </div>
             </div>
-          </TooltipProvider>
+          </div>
         ) : (
           <div className="h-[420px] w-full">
             <ResponsiveContainer width="100%" height="100%">
