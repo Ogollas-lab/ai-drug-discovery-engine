@@ -57,6 +57,8 @@ const colorForMagnitude = (m: number) => {
 export const SHAPBeeswarm = () => {
   const [view, setView] = useState<ViewMode>("beeswarm");
   const [selectedMolecules, setSelectedMolecules] = useState<string[]>(AVAILABLE_MOLECULES);
+  const [hovered, setHovered] = useState<(BeePoint & { cx: number; cy: number }) | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const toggleMolecule = (m: string) => {
     setSelectedMolecules(prev =>
