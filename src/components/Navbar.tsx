@@ -39,6 +39,7 @@ const navGroups: NavGroup[] = [
     label: "Resources",
     items: [
       { label: "Datasets", path: "/datasets", desc: "PDB, BindingDB, ChEMBL" },
+      { label: "Governance", path: "/governance", desc: "License & provenance" },
       { label: "Education", path: "/education", desc: "Learning hub & lab" },
       { label: "Classroom", path: "/classroom", desc: "Instructor mode" },
     ],
