@@ -23,6 +23,7 @@ import Datasets from "./pages/Datasets";
 import GATPredictor from "./pages/GATPredictor";
 import Validation from "./pages/Validation";
 import Training from "./pages/Training";
+import Governance from "./pages/Governance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
