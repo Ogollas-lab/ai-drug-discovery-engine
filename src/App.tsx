@@ -51,6 +51,7 @@ const App = () => (
               <Route path="/gat" element={<GATPredictor />} />
               <Route path="/validation" element={<Validation />} />
               <Route path="/training" element={<Training />} />
+              <Route path="/governance" element={<Governance />} />
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/classroom" element={<Classroom />} />
               <Route path="/pricing" element={<Pricing />} />
