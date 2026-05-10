@@ -385,4 +385,188 @@ export const BATCH_SNAPSHOT_KEY = "isde.training.batch.v1";
  */
 export const PRIORITY_DISEASE_QUERIES: { disease: string; query: string; category: string }[] = [
   { disease: "Rift Valley Fever", query: "Rift Valley Fever virus polymerase", category: "Viral" },
-  { disease: "Lassa Fever", query: "Lassa virus gl
+  { disease: "Lassa Fever", query: "Lassa virus glycoprotein", category: "Viral" },
+  { disease: "Rabies", query: "Rabies virus glycoprotein", category: "Viral" },
+  { disease: "Hepatitis B", query: "Hepatitis B virus polymerase", category: "Viral" },
+  { disease: "Visceral Leishmaniasis", query: "Leishmania donovani trypanothione reductase", category: "NTD" },
+  { disease: "Schistosomiasis", query: "Schistosoma mansoni thioredoxin glutathione reductase", category: "NTD" },
+  { disease: "Mycetoma", query: "Madurella mycetomatis CYP51", category: "NTD" },
+  { disease: "Drug-Resistant TB", query: "Mycobacterium tuberculosis InhA", category: "Resistant" },
+  { disease: "Burkitt Lymphoma", query: "MYC oncogene Burkitt lymphoma", category: "Resistant" },
+  { disease: "Alzheimer's Disease", query: "amyloid beta secretase BACE1", category: "Neurological" },
+  { disease: "Nodding Syndrome", query: "Onchocerca volvulus tubulin", category: "Neurological" },
+];
+
+export interface DiseaseRunSummary {
+  disease: string;
+  category: string;
+  query: string;
+  prepared: number;
+  trainCount: number;
+  valCount: number;
+  finalRMSE: number;
+  finalR2: number;
+  ingested: TrainingSnapshot["ingested"];
+  notes: string[];
+  error?: string;
+}
+
+export interface BatchTrainingSnapshot {
+  generatedAt: string;
+  runs: DiseaseRunSummary[];
+  aggregate: {
+    totalExamples: number;
+    avgRMSE: number;
+    avgR2: number;
+    sources: Record<string, number>;
+  };
+  calibration: CalibrationParams;
+  compliance: {
+    productionIssues: ComplianceIssue[];
+    productionDatasets: string[];
+    researchOnlyDatasets: string[];
+    blockedDatasets: string[];
+  };
+}
+
+export interface RunBatchOptions {
+  epochs?: number;
+  onProgress?: (done: number, total: number, current: string) => void;
+}
+
+/**
+ * Run the training pipeline across every priority disease, aggregate
+ * the results into a single calibration update, and persist a batch
+ * snapshot for the Training dashboard. License-blocked datasets are
+ * automatically excluded via the registry compliance scan.
+ */
+export async function runBatchTraining(
+  opts: RunBatchOptions = {},
+): Promise<BatchTrainingSnapshot> {
+  const { epochs = 10, onProgress } = opts;
+  const runs: DiseaseRunSummary[] = [];
+  const aggregateSources: Record<string, number> = {};
+  let allTrain: TrainingExample[] = [];
+  let allVal: TrainingExample[] = [];
+
+  for (let i = 0; i < PRIORITY_DISEASE_QUERIES.length; i++) {
+    const { disease, query, category } = PRIORITY_DISEASE_QUERIES[i];
+    onProgress?.(i, PRIORITY_DISEASE_QUERIES.length, disease);
+    try {
+      const report = await aggregateDatasetEvidence(query);
+      const prepared = prepareDataset(report);
+      const { train, val } = trainValSplit(prepared);
+      const fitRes = fit(train, val, epochs);
+      prepared.forEach((p) => {
+        aggregateSources[p.source] = (aggregateSources[p.source] ?? 0) + 1;
+      });
+      allTrain = allTrain.concat(train);
+      allVal = allVal.concat(val);
+      const notes: string[] = [];
+      if (report.bindingdb.length === 0)
+        notes.push("No BindingDB labels — weak structural priors only.");
+      if (train.length < 5) notes.push("Small labeled set — calibration approximate.");
+      runs.push({
+        disease,
+        category,
+        query,
+        prepared: prepared.length,
+        trainCount: train.length,
+        valCount: val.length,
+        finalRMSE: fitRes.finalRMSE,
+        finalR2: fitRes.finalR2,
+        ingested: {
+          pdb: report.pdb.length,
+          bindingdb: report.bindingdb.length,
+          uniprot: report.uniprot.length,
+          drugbank: report.drugbank.length,
+          zinc: report.zinc.length,
+        },
+        notes,
+      });
+    } catch (e) {
+      runs.push({
+        disease,
+        category,
+        query,
+        prepared: 0,
+        trainCount: 0,
+        valCount: 0,
+        finalRMSE: 0,
+        finalR2: 0,
+        ingested: { pdb: 0, bindingdb: 0, uniprot: 0, drugbank: 0, zinc: 0 },
+        notes: [],
+        error: e instanceof Error ? e.message : "Run failed",
+      });
+    }
+  }
+  onProgress?.(
+    PRIORITY_DISEASE_QUERIES.length,
+    PRIORITY_DISEASE_QUERIES.length,
+    "aggregating",
+  );
+
+  // Cross-disease global calibration fit
+  const globalFit = fit(allTrain, allVal, epochs);
+  const totalExamples = runs.reduce((a, r) => a + r.prepared, 0);
+  const valid = runs.filter((r) => !r.error && r.trainCount > 0);
+  const avgRMSE =
+    valid.length > 0 ? valid.reduce((a, r) => a + r.finalRMSE, 0) / valid.length : 0;
+  const avgR2 =
+    valid.length > 0 ? valid.reduce((a, r) => a + r.finalR2, 0) / valid.length : 0;
+
+  const calibration: CalibrationParams = {
+    scale: +globalFit.scale.toFixed(4),
+    bias: +globalFit.bias.toFixed(4),
+    trainedAt: new Date().toISOString(),
+    examples: totalExamples,
+    sources: aggregateSources,
+  };
+
+  const productionIssues = scanRegistry("production");
+  const productionDatasets = DATASET_REGISTRY.filter((d) => d.tier === "production").map(
+    (d) => d.name,
+  );
+  const researchOnlyDatasets = DATASET_REGISTRY.filter((d) => d.tier === "research").map(
+    (d) => d.name,
+  );
+  const blockedDatasets = DATASET_REGISTRY.filter((d) => d.tier === "blocked").map(
+    (d) => d.name,
+  );
+
+  const snapshot: BatchTrainingSnapshot = {
+    generatedAt: new Date().toISOString(),
+    runs,
+    aggregate: {
+      totalExamples,
+      avgRMSE: +avgRMSE.toFixed(4),
+      avgR2: +avgR2.toFixed(4),
+      sources: aggregateSources,
+    },
+    calibration,
+    compliance: {
+      productionIssues,
+      productionDatasets,
+      researchOnlyDatasets,
+      blockedDatasets,
+    },
+  };
+
+  try {
+    localStorage.setItem(CALIBRATION_KEY, JSON.stringify(calibration));
+    localStorage.setItem(BATCH_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {
+    // ignore
+  }
+  return snapshot;
+}
+
+export function loadBatchSnapshot(): BatchTrainingSnapshot | null {
+  try {
+    const raw = localStorage.getItem(BATCH_SNAPSHOT_KEY);
+    return raw ? (JSON.parse(raw) as BatchTrainingSnapshot) : null;
+  } catch {
+    return null;
+  }
+}
+
