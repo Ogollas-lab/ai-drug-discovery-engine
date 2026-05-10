@@ -174,6 +174,174 @@ export default function Training() {
           )}
         </section>
 
+        {/* Batch training across all priority diseases */}
+        <section className="glass-panel rounded-lg p-5 border border-border/50 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-end gap-3 md:justify-between">
+            <div>
+              <p className="text-xs font-mono text-primary uppercase tracking-wider flex items-center gap-2">
+                <Layers className="w-3.5 h-3.5" /> Africa-focused continuous training
+              </p>
+              <h2 className="font-display text-xl mt-1">Train across all priority diseases</h2>
+              <p className="text-xs text-muted-foreground max-w-2xl mt-1">
+                Runs the full ingest → prepare → validate → train → calibrate pipeline
+                across {PRIORITY_DISEASE_QUERIES.length} WHO/Africa-priority diseases
+                (viral, NTD, resistant, neurological). Aggregated calibration is
+                persisted to the GAT predictor. License-blocked datasets are
+                automatically excluded via the governance registry.
+              </p>
+            </div>
+            <Button onClick={runBatch} disabled={batchRunning} className="gap-2 shrink-0">
+              <Play className="w-4 h-4" />
+              {batchRunning ? "Training…" : "Run batch training"}
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {PRIORITY_DISEASE_QUERIES.map((d) => (
+              <Badge key={d.disease} variant="outline" className="font-mono text-[10px]">
+                {d.disease}
+              </Badge>
+            ))}
+          </div>
+
+          {batchRunning && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-mono text-muted-foreground">
+                <span>Currently training: {batchProgress.current}</span>
+                <span>
+                  {batchProgress.done}/{batchProgress.total}
+                </span>
+              </div>
+              <Progress value={batchPct} />
+            </div>
+          )}
+        </section>
+
+        {batch && (
+          <>
+            <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="glass-panel rounded-md border border-border/50 p-4">
+                <p className="text-[10px] uppercase font-mono text-muted-foreground">Diseases trained</p>
+                <p className="font-display text-2xl">{batch.runs.length}</p>
+              </div>
+              <div className="glass-panel rounded-md border border-border/50 p-4">
+                <p className="text-[10px] uppercase font-mono text-muted-foreground">Total examples</p>
+                <p className="font-display text-2xl">{batch.aggregate.totalExamples.toLocaleString()}</p>
+              </div>
+              <div className="glass-panel rounded-md border border-border/50 p-4">
+                <p className="text-[10px] uppercase font-mono text-muted-foreground">Avg RMSE</p>
+                <p className="font-display text-2xl">{batch.aggregate.avgRMSE.toFixed(3)}</p>
+              </div>
+              <div className="glass-panel rounded-md border border-border/50 p-4">
+                <p className="text-[10px] uppercase font-mono text-muted-foreground">Avg R²</p>
+                <p className="font-display text-2xl">{batch.aggregate.avgR2.toFixed(3)}</p>
+              </div>
+            </section>
+
+            <section className="glass-panel rounded-lg p-5 border border-border/50">
+              <h2 className="font-display text-lg mb-3">Per-disease training results</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono">
+                  <thead className="text-muted-foreground border-b border-border/50">
+                    <tr>
+                      <th className="text-left py-2 pr-3">Disease</th>
+                      <th className="text-left pr-3">Category</th>
+                      <th className="text-right pr-3">Examples</th>
+                      <th className="text-right pr-3">Train/Val</th>
+                      <th className="text-right pr-3">RMSE</th>
+                      <th className="text-right pr-3">R²</th>
+                      <th className="text-left">Sources (PDB/BDB/UP/DB/ZINC)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {batch.runs.map((r) => (
+                      <tr key={r.disease} className="border-b border-border/30">
+                        <td className="py-2 pr-3 text-foreground">{r.disease}</td>
+                        <td className="pr-3">
+                          <Badge variant="outline" className="text-[10px]">{r.category}</Badge>
+                        </td>
+                        <td className="text-right pr-3">{r.prepared}</td>
+                        <td className="text-right pr-3">{r.trainCount}/{r.valCount}</td>
+                        <td className="text-right pr-3">
+                          {r.error ? <span className="text-destructive">err</span> : r.finalRMSE.toFixed(3)}
+                        </td>
+                        <td className="text-right pr-3">{r.error ? "—" : r.finalR2.toFixed(3)}</td>
+                        <td className="text-muted-foreground">
+                          {r.ingested.pdb}/{r.ingested.bindingdb}/{r.ingested.uniprot}/{r.ingested.drugbank}/{r.ingested.zinc}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="grid md:grid-cols-2 gap-4">
+              <div className="glass-panel rounded-lg p-5 border border-border/50">
+                <h2 className="font-display text-lg mb-3 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary" /> Governance & licensing
+                </h2>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <p className="font-mono text-muted-foreground mb-1">Production-safe datasets ({batch.compliance.productionDatasets.length})</p>
+                    <div className="flex flex-wrap gap-1">
+                      {batch.compliance.productionDatasets.map((n) => (
+                        <Badge key={n} variant="outline" className="text-[10px]">{n}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-mono text-muted-foreground mb-1">Research-only ({batch.compliance.researchOnlyDatasets.length})</p>
+                    <div className="flex flex-wrap gap-1">
+                      {batch.compliance.researchOnlyDatasets.map((n) => (
+                        <Badge key={n} variant="outline" className="text-[10px] border-yellow-500/40 text-yellow-400">{n}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  {batch.compliance.blockedDatasets.length > 0 && (
+                    <div>
+                      <p className="font-mono text-destructive mb-1">Blocked from training</p>
+                      <div className="flex flex-wrap gap-1">
+                        {batch.compliance.blockedDatasets.map((n) => (
+                          <Badge key={n} variant="outline" className="text-[10px] border-destructive/50 text-destructive">{n}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {batch.compliance.productionIssues.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground pt-2 border-t border-border/30">
+                      {batch.compliance.productionIssues.length} compliance note(s) recorded — see /governance
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="glass-panel rounded-lg p-5 border border-border/50">
+                <h2 className="font-display text-lg mb-3">Aggregated calibration</h2>
+                <p className="font-mono text-sm">
+                  scale = <span className="text-primary">{batch.calibration.scale}</span>
+                </p>
+                <p className="font-mono text-sm">
+                  bias = <span className="text-primary">{batch.calibration.bias}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Persisted to GAT predictor and consumed by all downstream
+                  prediction modules (Validation, Binding Realism, Disease scoring).
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {Object.entries(batch.calibration.sources).map(([k, v]) => (
+                    <Badge key={k} variant="outline" className="font-mono text-[10px]">
+                      {k}: {v}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-[10px] font-mono text-muted-foreground mt-3">
+                  Trained at {new Date(batch.calibration.trainedAt).toLocaleString()}
+                </p>
+              </div>
+            </section>
+          </>
+        )}
         {snapshot && (
           <>
             {/* Ingestion summary */}
