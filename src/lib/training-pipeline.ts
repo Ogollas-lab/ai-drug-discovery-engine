@@ -367,3 +367,22 @@ export function applyCalibration(score: number): number {
   if (!c) return score;
   return Math.max(0, Math.min(1, c.scale * score + c.bias));
 }
+
+// ---------- Batch training across priority diseases ----------
+
+import {
+  DATASET_REGISTRY,
+  scanRegistry,
+  type ComplianceIssue,
+} from "@/data/dataset-registry";
+
+export const BATCH_SNAPSHOT_KEY = "isde.training.batch.v1";
+
+/**
+ * WHO/Africa-focused priority diseases the model is continuously
+ * fine-tuned against. Each entry maps to a topic query for the public
+ * dataset hubs (PDB, BindingDB, UniProt, DrugBank, ZINC).
+ */
+export const PRIORITY_DISEASE_QUERIES: { disease: string; query: string; category: string }[] = [
+  { disease: "Rift Valley Fever", query: "Rift Valley Fever virus polymerase", category: "Viral" },
+  { disease: "Lassa Fever", query: "Lassa virus gl
