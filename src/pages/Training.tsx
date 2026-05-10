@@ -10,15 +10,20 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { Database, Cpu, GitBranch, Beaker, CheckCircle2, AlertTriangle, Play } from "lucide-react";
+import { Database, Cpu, GitBranch, Beaker, CheckCircle2, AlertTriangle, Play, Layers, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   runTrainingPipeline,
   loadSnapshot,
+  runBatchTraining,
+  loadBatchSnapshot,
+  PRIORITY_DISEASE_QUERIES,
   type TrainingSnapshot,
+  type BatchTrainingSnapshot,
 } from "@/lib/training-pipeline";
 
 const STAGES = [
