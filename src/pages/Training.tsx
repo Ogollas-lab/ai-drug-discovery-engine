@@ -40,9 +40,17 @@ export default function Training() {
   const [snapshot, setSnapshot] = useState<TrainingSnapshot | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [batch, setBatch] = useState<BatchTrainingSnapshot | null>(null);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({
+    done: 0,
+    total: PRIORITY_DISEASE_QUERIES.length,
+    current: "",
+  });
 
   useEffect(() => {
     setSnapshot(loadSnapshot());
+    setBatch(loadBatchSnapshot());
   }, []);
 
   async function run() {
@@ -65,7 +73,31 @@ export default function Training() {
     }
   }
 
+  async function runBatch() {
+    setBatchRunning(true);
+    setError(null);
+    setBatchProgress({
+      done: 0,
+      total: PRIORITY_DISEASE_QUERIES.length,
+      current: PRIORITY_DISEASE_QUERIES[0].disease,
+    });
+    try {
+      const snap = await runBatchTraining({
+        epochs: 10,
+        onProgress: (done, total, current) =>
+          setBatchProgress({ done, total, current }),
+      });
+      setBatch(snap);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Batch training failed");
+    } finally {
+      setBatchRunning(false);
+    }
+  }
+
   const stageIdx = STAGES.findIndex((s) => s.key === stage);
+  const batchPct =
+    batchProgress.total > 0 ? (batchProgress.done / batchProgress.total) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
