@@ -43,9 +43,30 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/vitalis-ai')
-.then(() => console.log('✓ MongoDB connected'))
-.catch(err => console.error('✗ MongoDB connection error:', err));
+const mongoUri = process.env.MONGODB_URI || process.env.MONGODB_ATLAS_URI || 'mongodb://localhost:27017/vitalis-ai';
+const mongoOptions = {
+  retryWrites: true,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+};
+
+// Add SSL options for MongoDB Atlas
+if (mongoUri.includes('mongodb+srv://')) {
+  mongoOptions.ssl = true;
+  // For development, you may need to disable certificate verification
+  // For production, this should be false
+  mongoOptions.tlsInsecure = process.env.NODE_ENV !== 'production';
+}
+
+mongoose.connect(mongoUri, mongoOptions)
+  .then(() => console.log('✓ MongoDB connected'))
+  .catch(err => {
+    console.error('✗ MongoDB connection error:', err.message);
+    // Continue running even if MongoDB fails for development
+    console.log('⚠️  Running in offline mode - some features may not work');
+    console.log('💡 Tip: Install local MongoDB or check MongoDB Atlas connection string');
+  });
 
 // Health Check
 app.get('/api/health', (req, res) => {

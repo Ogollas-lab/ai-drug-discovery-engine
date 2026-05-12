@@ -17,14 +17,14 @@ CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C`;
 const MAX_COMPOUNDS = 100;
 const MAX_INPUT_LENGTH = 10000;
 
-type SortKey = "affinity" | "mw" | "logp" | "tpsa" | "name";
+type SortKey = "gnnEngagementScore" | "mw" | "logp" | "tpsa" | "name";
 
 const Screening = () => {
   const [input, setInput] = useState("");
   const [results, setResults] = useState<MoleculeResult[]>([]);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>("affinity");
+  const [sortKey, setSortKey] = useState<SortKey>("gnnEngagementScore");
   const [sortAsc, setSortAsc] = useState(false);
   const [error, setError] = useState("");
 
@@ -64,7 +64,7 @@ const Screening = () => {
       setProgress(Math.round(((i + batch.length) / lines.length) * 100));
     }
 
-    batchResults.sort((a, b) => b.affinity - a.affinity);
+    batchResults.sort((a, b) => b.gnnEngagementScore - a.gnnEngagementScore);
     setResults(batchResults);
     if (invalidInputs.length > 0) {
       setError(`Could not resolve ${invalidInputs.length} input(s) in PubChem: ${invalidInputs.slice(0, 3).join(", ")}${invalidInputs.length > 3 ? "..." : ""}`);
@@ -87,9 +87,9 @@ const Screening = () => {
   const pubchemCount = results.filter((r) => r.dataSource === "pubchem").length;
 
   const exportCsv = () => {
-    const header = "Rank,Name,SMILES,Affinity,MW,LogP,H-Donors,H-Acceptors,TPSA,Violations,Drug-like,DataSource\n";
+    const header = "Rank,Name,SMILES,GNN Score,MW,LogP,H-Donors,H-Acceptors,TPSA,Violations,Drug-like,DataSource\n";
     const rows = sorted.map((r, i) =>
-      `${i + 1},"${r.name}","${r.smiles}",${r.affinity},${r.mw},${r.logp},${r.hDonors},${r.hAcceptors},${r.tpsa},${r.violations},${r.drugLike},${r.dataSource}`
+      `${i + 1},"${r.name}","${r.smiles}",${r.gnnEngagementScore},${r.mw},${r.logp},${r.hDonors},${r.hAcceptors},${r.tpsa},${r.violations},${r.drugLike},${r.dataSource}`
     ).join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
     const a = document.createElement("a");
@@ -144,7 +144,7 @@ const Screening = () => {
               }}
               placeholder={"CC(=O)OC1=CC=CC=C1C(=O)O\nCN1C=NC2=C1C(=O)N(C(=O)N2C)C\n..."}
               rows={6}
-              className="font-mono text-sm bg-background border-border resize-none mb-4"
+              className="font-mono text-sm text-foreground bg-background border-border resize-none mb-4"
             />
             {error && <p className="text-xs text-destructive mb-3 font-mono">{error}</p>}
             <div className="flex gap-3">
@@ -210,6 +210,9 @@ const Screening = () => {
                     <span className="text-[10px] font-mono text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
                       {pubchemCount}/{sorted.length} from PubChem
                     </span>
+                    <span className="text-[10px] font-mono text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded border border-yellow-400/20">
+                      GNN Score · predicted · not a Ki or IC50
+                    </span>
                   </div>
                   <Button variant="ghost" onClick={exportCsv} className="text-muted-foreground gap-2 text-xs">
                     <Download className="w-4 h-4" /> Export CSV
@@ -223,7 +226,7 @@ const Screening = () => {
                         <th className="text-left px-4 py-3 text-xs font-mono text-muted-foreground w-12">#</th>
                         {([
                           ["name", "Compound"],
-                          ["affinity", "Affinity"],
+                          ["gnnEngagementScore", "GNN Score"],
                           ["mw", "MW"],
                           ["logp", "LogP"],
                           ["tpsa", "TPSA"],
@@ -262,10 +265,10 @@ const Screening = () => {
                               <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
                                 <div
                                   className="h-full rounded-full bg-gradient-to-r from-primary to-neon-cyan"
-                                  style={{ width: `${r.affinity * 100}%` }}
+                                  style={{ width: `${r.gnnEngagementScore * 100}%` }}
                                 />
                               </div>
-                              <span className="text-sm font-mono text-primary">{r.affinity.toFixed(2)}</span>
+                              <span className="text-sm font-mono text-primary">{r.gnnEngagementScore.toFixed(2)}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm font-mono text-foreground">{r.mw.toFixed(2)}</td>

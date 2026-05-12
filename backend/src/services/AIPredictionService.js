@@ -1,532 +1,412 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const ExternalDataService = require('./ExternalDataService');
+/**
+ * AIPredictionService — Vitalis AI Backend
+ * ─────────────────────────────────────────
+ * Architecture contract:
+ *
+ *   Gemini is a SCIENTIFIC REASONING LAYER only.
+ *   It receives validated descriptors and returns natural-language interpretation.
+ *   It NEVER calculates descriptors, generates SMILES, or invents pharmacology.
+ *
+ *   Pipeline:
+ *     1. Validated descriptors (PubChem / rule-based) → injected into context
+ *     2. System prompt enforces pharmaceutical-grade behavior
+ *     3. Gemini generates reasoning text only
+ *     4. Post-validation strips hallucinated claims before response is returned
+ *     5. All outputs are labelled with provenance (experimental / predicted / inferred)
+ *
+ *   Model: gemini-2.5-flash-lite (free tier, sufficient for reasoning tasks)
+ */
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+'use strict';
+
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODEL_ID = 'gemini-2.5-flash-lite';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYSTEM PROMPT — injected into every request
+// Enforces pharmaceutical-grade scientific behavior.
+// ─────────────────────────────────────────────────────────────────────────────
+const SCIENTIFIC_SYSTEM_PROMPT = `
+You are a scientific reasoning assistant embedded in Vitalis AI, a pharmaceutical drug discovery platform.
+
+Your role is STRICTLY limited to:
+- Interpreting validated molecular descriptors provided to you
+- Providing SAR (structure-activity relationship) commentary
+- Explaining ADMET properties in scientific and educational language
+- Contextualising GNN target engagement scores
+- Generating medicinal chemistry rationale for scaffold modifications
+
+ABSOLUTE PROHIBITIONS — you must NEVER:
+1. Generate, invent, or modify SMILES strings
+2. Calculate or fabricate molecular descriptors (MW, LogP, TPSA, etc.)
+3. Invent binding affinities, Ki, IC50, Kd, or ΔG values
+4. Fabricate ADMET properties not provided in the context
+5. Claim a molecule is "safe" without experimental toxicology data
+6. Use "binding affinity" to describe a GNN score — use "GNN Target Engagement Score"
+7. Assert that a predicted score equals experimental evidence
+8. Override or contradict validated cheminformatics data in the context
+
+DATA PROVENANCE — label every claim:
+[EXPERIMENTAL] — from PubChem, ChEMBL, FDA labels, or peer-reviewed literature
+[PREDICTED]    — from a computational model
+[INFERRED]     — your scientific reasoning from structural features
+[UNKNOWN]      — data not available; do not estimate without flagging
+
+CORRECT TERMINOLOGY:
+✓ GNN Target Engagement Score (for 0–1 ML scores)
+✓ Predicted interaction probability
+✓ Physicochemical descriptors
+✓ Lipinski Ro5 compliance
+✓ hERG interaction probability
+✓ CYP3A4 substrate probability
+✗ Never: "binding affinity" for a GNN score
+✗ Never: "safe compound" without experimental data
+✗ Never: "will be absorbed" — use "predicted to have good oral absorption"
+
+UNCERTAINTY — always communicate confidence level:
+- Experimental data: state the source
+- Predicted data: state the model and its limitations
+- Inferred: state the structural basis
+- Unknown: say so explicitly
+
+If asked to generate SMILES or calculate descriptors, respond:
+"Molecular structure generation and descriptor calculation are handled by the validated cheminformatics engine. I can only interpret provided data."
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pharmacology priors — prevent biologically implausible outputs for known drugs
+// Source: FDA labels, ChEMBL, DrugBank, published literature
+// ─────────────────────────────────────────────────────────────────────────────
+const PHARMACOLOGY_PRIORS = {
+  // Aspirin — no hERG liability, not a CYP3A4 substrate
+  'CC(=O)OC1=CC=CC=C1C(=O)O': {
+    hergRisk: 'low', cyp3a4Substrate: false, hepatotoxicity: 'low',
+    confidence: 'experimental',
+    note: 'FDA-approved NSAID. No clinically relevant hERG blockade. Hydrolysed to salicylate. CYP2C9 minor involvement.'
+  },
+  // Acetaminophen — hepatotoxicity is its defining safety concern
+  'CC(=O)Nc1ccc(O)cc1': {
+    hergRisk: 'low', cyp3a4Substrate: true, hepatotoxicity: 'high',
+    confidence: 'experimental',
+    note: 'CYP2E1/CYP3A4 → NAPQI → glutathione depletion → hepatocellular necrosis. Hepatotoxicity is the primary safety concern at supratherapeutic doses.'
+  },
+  // Ibuprofen — CYP2C9 substrate, not CYP3A4
+  'CC(C)CC1=CC=C(C=C1)C(C)C(O)=O': {
+    hergRisk: 'low', cyp3a4Substrate: false, hepatotoxicity: 'low',
+    confidence: 'experimental',
+    note: 'CYP2C9 substrate (not CYP3A4). Low hERG liability. Low aqueous solubility.'
+  },
+  // Caffeine — CYP1A2 substrate
+  'CN1C=NC2=C1C(=O)N(C(=O)N2C)C': {
+    hergRisk: 'low', cyp3a4Substrate: false, hepatotoxicity: 'low',
+    confidence: 'experimental',
+    note: 'CYP1A2 substrate (not CYP3A4). No hERG liability. Good CNS penetration.'
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Core Gemini call — low-level, used by all public methods
+// ─────────────────────────────────────────────────────────────────────────────
+async function callGemini(userContent, apiKey) {
+  const url = `${GEMINI_API_BASE}/${MODEL_ID}:generateContent?key=${apiKey}`;
+
+  const payload = {
+    system_instruction: { parts: [{ text: SCIENTIFIC_SYSTEM_PROMPT }] },
+    contents: [{ parts: [{ text: userContent }] }],
+    generationConfig: {
+      temperature: 0.2,   // Low: scientific accuracy over creativity
+      topK: 20,
+      topP: 0.85,
+      maxOutputTokens: 2048,
+    },
+    safetySettings: [
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+    ],
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (response.status === 429) {
+    const err = new Error('Gemini rate limit exceeded');
+    err.status = 429;
+    throw err;
+  }
+  if (!response.ok) {
+    throw new Error(`Gemini API error ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Post-validation — strip hallucinated claims before returning to client
+// ─────────────────────────────────────────────────────────────────────────────
+function validateAndSanitiseResponse(text, moleculeData) {
+  if (!text) return { text: '', corrections: ['Empty response from Gemini'], safe: false };
+
+  let corrected = text;
+  const corrections = [];
+
+  // 1. Gemini must not claim to have calculated descriptors
+  if (/I (calculated|computed|determined|found) the (MW|LogP|TPSA|molecular weight)/i.test(corrected)) {
+    corrected = corrected.replace(
+      /I (calculated|computed|determined|found) the (MW|LogP|TPSA|molecular weight)/gi,
+      'The provided $2'
+    );
+    corrections.push('Corrected: Gemini claimed to calculate descriptors.');
+  }
+
+  // 2. "binding affinity" → "GNN target engagement score"
+  if (/binding affinity/i.test(corrected)) {
+    corrected = corrected.replace(/binding affinity/gi, 'GNN target engagement score');
+    corrections.push("Corrected: 'binding affinity' → 'GNN target engagement score'.");
+  }
+
+  // 3. Unqualified safety claims
+  if (/\b(this compound is safe|safe compound|no safety concerns|non-toxic)\b/i.test(corrected)) {
+    corrected = corrected.replace(
+      /\b(this compound is safe|safe compound|no safety concerns|non-toxic)\b/gi,
+      'no significant safety signals identified in the predicted profile (experimental validation required)'
+    );
+    corrections.push('Corrected: Unqualified safety claim hedged appropriately.');
+  }
+
+  // 4. BBB correction: if TPSA > 90, Gemini must not claim good BBB penetration
+  if (moleculeData?.tpsa > 90) {
+    const bbbOverclaims = [
+      'good blood-brain barrier penetration',
+      'strong BBB penetration',
+      'likely crosses the blood-brain barrier',
+      'excellent CNS penetration',
+    ];
+    for (const phrase of bbbOverclaims) {
+      if (new RegExp(phrase, 'i').test(corrected)) {
+        corrected = corrected.replace(new RegExp(phrase, 'gi'), 'limited predicted BBB penetration (TPSA > 90 Å²)');
+        corrections.push(`Corrected: BBB overclaim for TPSA=${moleculeData.tpsa} Å².`);
+      }
+    }
+  }
+
+  // 5. Acetaminophen hepatotoxicity must not be downplayed
+  if (moleculeData?.smiles === 'CC(=O)Nc1ccc(O)cc1') {
+    if (/low hepatotoxicity|no liver|liver safe/i.test(corrected)) {
+      corrected = corrected.replace(
+        /low hepatotoxicity|no liver risk|liver safe/gi,
+        'dose-dependent hepatotoxicity (NAPQI mechanism — experimental fact)'
+      );
+      corrections.push('Corrected: Acetaminophen hepatotoxicity must not be downplayed.');
+    }
+  }
+
+  return { text: corrected, corrections, safe: corrections.length === 0 };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build validated context block — injected before every user prompt
+// Gemini receives ONLY validated data, never raw user input as chemistry
+// ─────────────────────────────────────────────────────────────────────────────
+function buildValidatedContext(molecule, admet, gnnScore) {
+  const prior = PHARMACOLOGY_PRIORS[molecule.smiles] ?? null;
+
+  return `
+VALIDATED MOLECULAR CONTEXT — do not modify or contradict these values:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Molecule:           ${molecule.commonName || 'Unknown'} [${molecule.smiles ? 'SMILES provided' : 'no SMILES'}]
+MW:                 ${molecule.molecularWeight != null ? molecule.molecularWeight.toFixed(1) + ' Da' : 'N/A'} [EXPERIMENTAL · PubChem]
+LogP:               ${molecule.logP != null ? molecule.logP.toFixed(2) : 'N/A'} [EXPERIMENTAL · PubChem XLogP]
+TPSA:               ${molecule.topologicalPolarSurfaceArea != null ? molecule.topologicalPolarSurfaceArea.toFixed(1) + ' Å²' : 'N/A'} [EXPERIMENTAL · PubChem]
+H-bond donors:      ${molecule.hBondDonors ?? 'N/A'} [EXPERIMENTAL · PubChem]
+H-bond acceptors:   ${molecule.hBondAcceptors ?? 'N/A'} [EXPERIMENTAL · PubChem]
+Rotatable bonds:    ${molecule.rotatableBonds ?? 'N/A'} [EXPERIMENTAL · PubChem]
+GNN Engagement:     ${gnnScore != null ? gnnScore.toFixed(3) : 'N/A'} [PREDICTED · heuristic GNN · NOT a Ki/IC50/Kd/ΔG]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADMET PROFILE [${prior ? prior.confidence.toUpperCase() : 'PREDICTED'}]:
+hERG risk:          ${admet?.hergRisk ?? 'unknown'}
+CYP3A4 substrate:   ${admet?.cyp3a4Substrate != null ? admet.cyp3a4Substrate : 'unknown'}
+Hepatotoxicity:     ${admet?.hepatotoxicity ?? 'unknown'}
+Solubility:         ${admet?.solubility ?? 'unknown'}
+Permeability:       ${admet?.permeability ?? 'unknown'}
+${prior ? `ADMET note:         ${prior.note}` : 'ADMET note:         Estimated from physicochemical descriptors. Not experimentally validated.'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────────────────────
 
 class AIPredictionService {
-  static model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' });
 
   /**
-   * Predict comprehensive molecular properties using Gemini
+   * Generate scientific reasoning for a molecule.
+   * Gemini interprets validated descriptors — it does not calculate them.
    */
-  static async predictMolecularProperties(molecule, externalData = null) {
+  static async generateScientificReasoning(molecule, admet, gnnScore, userQuestion) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const context = buildValidatedContext(molecule, admet, gnnScore);
+    const prompt = `${context}\nUSER QUESTION:\n${userQuestion}`;
+
     const startTime = Date.now();
+    const rawText = await callGemini(prompt, apiKey);
+    const { text, corrections, safe } = validateAndSanitiseResponse(rawText, molecule);
 
-    try {
-      const prompt = this._buildPropertyPredictionPrompt(molecule, externalData);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-      const executionTime = Date.now() - startTime;
-
-      return {
-        success: true,
-        predictions: this._parsePropertyPredictions(text),
-        rawResponse: text,
-        executionTimeMs: executionTime,
-        model: 'gemini-2.5-flash'
-      };
-    } catch (error) {
-      console.error('Property prediction failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        executionTimeMs: Date.now() - startTime
-      };
-    }
+    return {
+      success: true,
+      reasoning: text,
+      corrections,
+      safe,
+      provenance: {
+        descriptors: 'PubChem (experimental)',
+        admet: PHARMACOLOGY_PRIORS[molecule.smiles] ? 'curated pharmacology prior' : 'heuristic prediction',
+        gnnScore: 'heuristic GNN — not experimental',
+        geminiRole: 'scientific reasoning only — no chemistry generation',
+      },
+      model: MODEL_ID,
+      executionTimeMs: Date.now() - startTime,
+    };
   }
 
   /**
-   * Predict binding affinity to target proteins
+   * Generate SAR commentary for a scaffold modification.
+   * Receives pre-validated original and modified descriptors.
+   * Gemini explains the change — it does not generate the modification.
    */
-  static async predictBindingAffinity(molecule, targetProtein, externalData = null) {
-    const startTime = Date.now();
+  static async generateSARCommentary(originalMolecule, modifiedMolecule, modificationLabel, modificationNote) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-    try {
-      const prompt = this._buildBindingAffinityPrompt(molecule, targetProtein, externalData);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-      const executionTime = Date.now() - startTime;
+    const prompt = `
+SCAFFOLD MODIFICATION ANALYSIS — interpret the following validated property changes:
 
-      const predictions = this._parseBindingAffinity(text);
+Original molecule: ${originalMolecule.commonName || 'Unknown'}
+Modification applied: ${modificationLabel}
+Medicinal chemistry rationale: ${modificationNote}
 
-      return {
-        success: true,
-        targetProtein,
-        score: predictions.score,
-        confidence: predictions.confidence,
-        unit: 'nM', // nanomolar
-        prediction: predictions,
-        executionTimeMs: executionTime,
-        model: 'gemini-2.5-flash'
-      };
-    } catch (error) {
-      console.error('Binding affinity prediction failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        executionTimeMs: Date.now() - startTime
-      };
-    }
-  }
+ORIGINAL DESCRIPTORS [EXPERIMENTAL · PubChem]:
+- MW: ${originalMolecule.molecularWeight?.toFixed(1)} Da
+- LogP: ${originalMolecule.logP?.toFixed(2) ?? 'N/A'}
+- TPSA: ${originalMolecule.topologicalPolarSurfaceArea?.toFixed(1)} Å²
+- H-donors: ${originalMolecule.hBondDonors}, H-acceptors: ${originalMolecule.hBondAcceptors}
+- Rotatable bonds: ${originalMolecule.rotatableBonds}
 
-  /**
-   * Predict toxicity and safety profile
-   */
-  static async predictToxicity(molecule, externalData = null) {
-    const startTime = Date.now();
-
-    try {
-      const prompt = this._buildToxicityPrompt(molecule, externalData);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-      const executionTime = Date.now() - startTime;
-
-      const predictions = this._parseToxicity(text);
-
-      return {
-        success: true,
-        overallScore: predictions.overallScore,
-        confidence: predictions.confidence,
-        categories: predictions.categories,
-        redFlags: predictions.redFlags,
-        executionTimeMs: executionTime,
-        model: 'gemini-2.5-flash'
-      };
-    } catch (error) {
-      console.error('Toxicity prediction failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        executionTimeMs: Date.now() - startTime
-      };
-    }
-  }
-
-  /**
-   * Predict ADME (Absorption, Distribution, Metabolism, Excretion) properties
-   */
-  static async predictADME(molecule, externalData = null) {
-    const startTime = Date.now();
-
-    try {
-      const prompt = this._buildADMEPrompt(molecule, externalData);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-      const executionTime = Date.now() - startTime;
-
-      const predictions = this._parseADME(text);
-
-      return {
-        success: true,
-        absorption: predictions.absorption,
-        distribution: predictions.distribution,
-        metabolism: predictions.metabolism,
-        excretion: predictions.excretion,
-        bloodBrainBarrier: predictions.bbb,
-        executionTimeMs: executionTime,
-        model: 'gemini-2.5-flash'
-      };
-    } catch (error) {
-      console.error('ADME prediction failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        executionTimeMs: Date.now() - startTime
-      };
-    }
-  }
-
-  /**
-   * What-if analysis: predict effects of molecular modifications
-   */
-  static async whatIfAnalysis(baseMolecule, modifications, targetProperty = 'binding-affinity') {
-    const startTime = Date.now();
-
-    try {
-      const prompt = this._buildWhatIfPrompt(baseMolecule, modifications, targetProperty);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-      const executionTime = Date.now() - startTime;
-
-      const predictions = this._parseWhatIfAnalysis(text);
-
-      return {
-        success: true,
-        baseMolecule: baseMolecule.smiles,
-        modifications,
-        targetProperty,
-        predictions,
-        executionTimeMs: executionTime,
-        model: 'gemini-2.5-flash'
-      };
-    } catch (error) {
-      console.error('What-if analysis failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        executionTimeMs: Date.now() - startTime
-      };
-    }
-  }
-
-  /**
-   * Generate researcher-friendly detailed report
-   */
-  static async generateDetailedReport(molecule, predictions, externalData = null) {
-    try {
-      const prompt = this._buildDetailedReportPrompt(molecule, predictions, externalData);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-
-      return {
-        success: true,
-        report: text,
-        format: 'markdown'
-      };
-    } catch (error) {
-      console.error('Report generation failed:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Generate judge/non-technical summary
-   */
-  static async generateExecutiveSummary(molecule, predictions, externalData = null) {
-    try {
-      const prompt = this._buildExecutiveSummaryPrompt(molecule, predictions, externalData);
-      const response = await this.model.generateContent(prompt);
-      const text = response.response.text();
-
-      return {
-        success: true,
-        summary: text,
-        format: 'markdown',
-        keyMetrics: this._extractKeyMetrics(text)
-      };
-    } catch (error) {
-      console.error('Summary generation failed:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  // ============== Prompt Builders ==============
-
-  static _buildPropertyPredictionPrompt(molecule, externalData) {
-    return `You are an expert computational chemist and AI drug discovery system.
-
-Analyze the following molecule and predict its key properties:
-
-**Molecule Information:**
-- SMILES: ${molecule.smiles}
-- Name: ${molecule.commonName || 'Unknown'}
-${molecule.molecularWeight ? `- Molecular Weight: ${molecule.molecularWeight} Da` : ''}
-${molecule.logP ? `- LogP: ${molecule.logP}` : ''}
-${molecule.hBondDonors ? `- H-Bond Donors: ${molecule.hBondDonors}` : ''}
-${molecule.hBondAcceptors ? `- H-Bond Acceptors: ${molecule.hBondAcceptors}` : ''}
-${molecule.topologicalPolarSurfaceArea ? `- TPSA: ${molecule.topologicalPolarSurfaceArea} Ų` : ''}
-
-${externalData ? `**External Validation Data:**\n${JSON.stringify(externalData, null, 2)}` : ''}
-
-Please provide:
-1. Drug-likeness assessment (Lipinski's Rule of Five compliance)
-2. Synthetic accessibility (1-10 scale)
-3. Estimated BBB penetration (%)
-4. Primary metabolism pathway
-5. Confidence scores for each prediction
-6. Any flags or concerns
-
-Format as JSON with clear property names and numeric values where applicable.`;
-  }
-
-  static _buildBindingAffinityPrompt(molecule, targetProtein, externalData) {
-    return `You are an expert in molecular docking and binding prediction.
-
-Predict binding affinity for this molecule to ${targetProtein}:
-
-**Molecule:**
-- SMILES: ${molecule.smiles}
-- Name: ${molecule.commonName || 'Unknown'}
-- MW: ${molecule.molecularWeight || 'Unknown'} Da
-- LogP: ${molecule.logP || 'Unknown'}
-
-**Target Protein:** ${targetProtein}
-
-${externalData ? `**PubChem/ChEMBL Data:**\n${JSON.stringify(externalData, null, 2)}` : ''}
+MODIFIED DESCRIPTORS [EXPERIMENTAL · PubChem]:
+- MW: ${modifiedMolecule.molecularWeight?.toFixed(1)} Da (Δ ${((modifiedMolecule.molecularWeight || 0) - (originalMolecule.molecularWeight || 0)).toFixed(1)} Da)
+- LogP: ${modifiedMolecule.logP?.toFixed(2) ?? 'N/A'} (ΔLogP ${modifiedMolecule.logP != null && originalMolecule.logP != null ? (modifiedMolecule.logP - originalMolecule.logP).toFixed(2) : 'N/A'})
+- TPSA: ${modifiedMolecule.topologicalPolarSurfaceArea?.toFixed(1)} Å² (Δ ${((modifiedMolecule.topologicalPolarSurfaceArea || 0) - (originalMolecule.topologicalPolarSurfaceArea || 0)).toFixed(1)} Å²)
+- H-donors: ${modifiedMolecule.hBondDonors} (Δ ${(modifiedMolecule.hBondDonors || 0) - (originalMolecule.hBondDonors || 0)})
+- H-acceptors: ${modifiedMolecule.hBondAcceptors} (Δ ${(modifiedMolecule.hBondAcceptors || 0) - (originalMolecule.hBondAcceptors || 0)})
+- Rotatable bonds: ${modifiedMolecule.rotatableBonds} (Δ ${(modifiedMolecule.rotatableBonds || 0) - (originalMolecule.rotatableBonds || 0)})
 
 Provide:
-1. Predicted Kd (nM) - lower is better, typical good binders are < 100 nM
-2. Binding confidence (0-100%)
-3. Key interactions expected (H-bonds, hydrophobic contacts, etc.)
-4. RMSD estimate for predicted binding pose
-5. Comparison to known binders for this target
-6. Uncertainty range
-7. **XAI Reasoning**: A 1-2 sentence explanation of the chemical basis for the score.
-8. **Top Features**: List of structural features (e.g., "Aromatic ring", "Hydroxyl group") and their impact on the affinity (-0.5 to +0.5).
+1. SAR interpretation of the property changes [INFERRED]
+2. Expected impact on ADMET profile [INFERRED]
+3. Medicinal chemistry precedent for this transformation [INFERRED · cite drug class if known]
+4. Any toxicophore concerns introduced [INFERRED]
+5. Recommended next experimental steps
 
-Return as JSON with numeric scores and structured 'xai' object containing 'reasoning' and 'topFeatures'.`;
-  }
+Label all claims with [EXPERIMENTAL], [PREDICTED], or [INFERRED].
+Do not generate SMILES. Do not invent binding data.
+`;
 
-  static _buildToxicityPrompt(molecule, externalData) {
-    return `You are a toxicology and drug safety expert.
-
-Assess toxicity risk for this molecule:
-
-**Molecule:**
-- SMILES: ${molecule.smiles}
-- Name: ${molecule.commonName || 'Unknown'}
-- MW: ${molecule.molecularWeight || 'Unknown'} Da
-
-${externalData?.bioassays?.length ? `**Known Bioassay Data:**\n${JSON.stringify(externalData.bioassays.slice(0, 5), null, 2)}` : ''}
-
-Evaluate:
-1. Overall toxicity risk (0-100, where 100 = most toxic)
-2. Confidence in assessment (%)
-3. Specific toxicity categories:
-   - Hepatotoxicity risk
-   - Cardiotoxicity risk
-   - Neurotoxicity risk
-   - Genotoxicity risk
-   - Reproductive toxicity risk
-4. Red flags present
-5. Structural alerts triggered
-6. Recommendations for modification if needed
-7. **XAI Reasoning**: A 1-2 sentence explanation of why this molecule poses specific toxicity risks.
-8. **Top Features**: List of toxicophores or problematic groups and their impact.
-
-Return as JSON with category scores, risk levels (low/medium/high), and structured 'xai' object.`;
-  }
-
-  static _buildADMEPrompt(molecule, externalData) {
-    return `You are an expert in ADME (pharmacokinetics) prediction.
-
-Predict ADME properties for this molecule:
-
-**Molecule:**
-- SMILES: ${molecule.smiles}
-- Name: ${molecule.commonName || 'Unknown'}
-- MW: ${molecule.molecularWeight || 'Unknown'} Da
-- LogP: ${molecule.logP || 'Unknown'}
-- HBA: ${molecule.hBondAcceptors || 'Unknown'}
-- HBD: ${molecule.hBondDonors || 'Unknown'}
-- TPSA: ${molecule.topologicalPolarSurfaceArea || 'Unknown'} Ų
-
-Predict:
-1. Absorption (Caco-2 permeability, % oral bioavailability estimate)
-2. Distribution (volume of distribution, protein binding %)
-3. Metabolism (primary CYP isoforms, metabolic stability)
-4. Excretion (renal clearance, fecal excretion %)
-5. Blood-Brain Barrier penetration (yes/no + confidence)
-6. Estimated half-life (hours)
-7. Overall PK profile (favorable/moderate/poor)
-8. **XAI Reasoning**: A 1-2 sentence summary of the overall pharmacokinetic personality of the molecule.
-9. **Top Features**: Structural factors influencing ADME (e.g., "High Lipophilicity", "Low TPSA").
-
-Return JSON with numeric estimates, confidence scores, and structured 'xai' object.`;
-  }
-
-  static _buildWhatIfPrompt(baseMolecule, modifications, targetProperty) {
-    return `You are a medicinal chemist with expertise in structure-activity relationships.
-
-Base molecule: ${baseMolecule.smiles}
-
-Proposed modifications:
-${modifications.map((m, i) => `${i + 1}. ${m}`).join('\n')}
-
-Target property to improve: ${targetProperty}
-
-For each modification:
-1. Predict the new molecular structure (approximate SMILES)
-2. Estimate impact on target property (-50% to +200% change)
-3. Impact on other properties (toxicity, ADME, BBB penetration)
-4. Feasibility of synthesis (1-10 scale)
-5. Overall recommendation
-
-Provide:
-- Summary table of changes
-- Best modification option
-- Potential side effects of changes
-- Confidence in predictions
-
-Return as structured JSON.`;
-  }
-
-  static _buildDetailedReportPrompt(molecule, predictions, externalData) {
-    return `Generate a detailed scientific report for researchers.
-
-**Molecule:** ${molecule.commonName || molecule.smiles}
-
-**Predictions Made:**
-${JSON.stringify(predictions, null, 2)}
-
-**External Validation:**
-${externalData ? JSON.stringify(externalData, null, 2) : 'Not available'}
-
-Create a comprehensive markdown report including:
-1. Executive summary
-2. Molecular structure analysis
-3. Predicted properties with confidence intervals
-4. Comparison to known drugs/compounds
-5. Methodology and limitations
-6. References to data sources (PubChem, ChEMBL)
-7. Recommendations for further testing
-8. Statistical confidence of predictions
-
-Format with proper scientific sections and citations.`;
-  }
-
-  static _buildExecutiveSummaryPrompt(molecule, predictions, externalData) {
-    return `Generate a clear, non-technical summary for judges and stakeholders.
-
-**Molecule:** ${molecule.commonName || molecule.smiles}
-
-**Key Results:**
-${JSON.stringify(predictions, null, 2)}
-
-Create a brief summary (2-3 paragraphs) that includes:
-1. What this molecule could treat
-2. Key advantages (speed, cost, novelty)
-3. How it was predicted (AI-powered analysis)
-4. Why it matters for Africa (disease relevance, accessibility)
-5. Next steps for development
-6. Comparison to manual drug discovery timeline
-
-Use simple language, avoid jargon. Highlight:
-- Analysis speed (seconds vs. months)
-- Estimated cost savings
-- Clinical relevance
-- Africa-centric applications
-
-Format as markdown suitable for presentation.`;
-  }
-
-  // ============== Response Parsers ==============
-
-  static _parsePropertyPredictions(text) {
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      console.warn('Failed to parse property predictions JSON');
-    }
+    const startTime = Date.now();
+    const rawText = await callGemini(prompt, apiKey);
+    const { text, corrections, safe } = validateAndSanitiseResponse(rawText, originalMolecule);
 
     return {
-      rawText: text,
-      parsed: false,
-      extractedMetrics: this._extractMetricsFromText(text)
+      success: true,
+      sarCommentary: text,
+      corrections,
+      safe,
+      model: MODEL_ID,
+      executionTimeMs: Date.now() - startTime,
     };
   }
 
-  static _parseBindingAffinity(text) {
-    const scoreMatch = text.match(/Kd|affinity.*?(\d+\.?\d*)/i);
-    const confidenceMatch = text.match(/confidence.*?(\d+)/i);
+  /**
+   * Generate educational narrative for student mode.
+   * Plain-language interpretation of validated data.
+   */
+  static async generateEducationalNarrative(molecule, admet, gnnScore, targetName) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const context = buildValidatedContext(molecule, admet, gnnScore);
+    const prompt = `${context}
+TARGET: ${targetName || 'Unknown'}
+
+Generate a plain-language educational explanation of this molecule for pharmacy or biochemistry students.
+Include:
+1. What the molecule looks like chemically (based on provided descriptors only)
+2. Why it might or might not be a good drug candidate (Lipinski analysis)
+3. What the ADMET profile means in clinical terms
+4. What the GNN target engagement score means (and what it does NOT mean)
+5. What experiments would be needed to validate these predictions
+
+Use simple language. Retain all [EXPERIMENTAL]/[PREDICTED]/[INFERRED] labels.
+Do not invent data. Do not generate SMILES.
+`;
+
+    const startTime = Date.now();
+    const rawText = await callGemini(prompt, apiKey);
+    const { text, corrections, safe } = validateAndSanitiseResponse(rawText, molecule);
 
     return {
-      score: scoreMatch ? parseFloat(scoreMatch[1]) : 50,
-      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) / 100 : 0.7,
-      xai: this._extractXAI(text),
-      rawText: text,
-      parsed: !!scoreMatch
+      success: true,
+      narrative: text,
+      corrections,
+      safe,
+      model: MODEL_ID,
+      executionTimeMs: Date.now() - startTime,
     };
   }
 
-  static _parseToxicity(text) {
-    const scoreMatch = text.match(/overall.*?(\d+)/i);
-    const confidenceMatch = text.match(/confidence.*?(\d+)/i);
-    const categories = text.match(/\w+toxicity.*?(\d+)/gi) || [];
+  /**
+   * Generate executive summary for non-technical stakeholders.
+   * Africa-context aware.
+   */
+  static async generateExecutiveSummary(molecule, admet, gnnScore, diseaseContext) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const context = buildValidatedContext(molecule, admet, gnnScore);
+    const prompt = `${context}
+DISEASE CONTEXT: ${diseaseContext || 'Not specified'}
+
+Generate a 2–3 paragraph executive summary for non-technical stakeholders and funders.
+Include:
+- What this molecule could potentially treat (based on target and disease context)
+- Key drug-likeness findings (plain language)
+- What the AI predictions mean and their limitations
+- Why this matters for African health challenges
+- What the next steps in drug development would be
+
+Do not claim efficacy. Do not claim safety. Label all predictions clearly.
+Do not generate SMILES or invent data.
+`;
+
+    const startTime = Date.now();
+    const rawText = await callGemini(prompt, apiKey);
+    const { text, corrections, safe } = validateAndSanitiseResponse(rawText, molecule);
 
     return {
-      overallScore: scoreMatch ? parseFloat(scoreMatch[1]) / 100 : 0.5,
-      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) / 100 : 0.7,
-      categories: categories.map(c => ({
-        name: c.split(/\d/)[0],
-        score: parseFloat(c.match(/\d+/)[0]) / 100
-      })),
-      redFlags: text.match(/red flag.*?\n/gi) || [],
-      xai: this._extractXAI(text),
-      rawText: text
-    };
-  }
-
-  static _parseADME(text) {
-    return {
-      absorption: this._extractNumeric(text, 'absorption'),
-      distribution: this._extractNumeric(text, 'distribution'),
-      metabolism: this._extractNumeric(text, 'metabolism'),
-      excretion: this._extractNumeric(text, 'excretion'),
-      bbb: text.toLowerCase().includes('yes') || text.toLowerCase().includes('penetrate'),
-      xai: this._extractXAI(text),
-      rawText: text
-    };
-  }
-
-  static _parseWhatIfAnalysis(text) {
-    return {
-      suggestions: text.split('\n').filter(l => l.trim()).slice(0, 5),
-      rawText: text
-    };
-  }
-
-  static _extractMetricsFromText(text) {
-    const metrics = {};
-    const lines = text.split('\n');
-    lines.forEach(line => {
-      const match = line.match(/(\w+):\s*(\d+\.?\d*)/);
-      if (match) {
-        metrics[match[1]] = parseFloat(match[2]);
-      }
-    });
-    return metrics;
-  }
-
-  static _extractNumeric(text, property) {
-    const regex = new RegExp(`${property}.*?(\\d+\\.?\\d*)`, 'i');
-    const match = text.match(regex);
-    return match ? parseFloat(match[1]) / 100 : 0.5;
-  }
-
-  static _extractKeyMetrics(text) {
-    const metrics = [];
-    const lines = text.split('\n');
-    lines.slice(0, 10).forEach(line => {
-      if (line.includes(':') && line.match(/\d/)) {
-        metrics.push(line.trim());
-      }
-    });
-    return metrics;
-  }
-
-  static _extractXAI(text) {
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const data = JSON.parse(jsonMatch[0]);
-        if (data.xai) return data.xai;
-        if (data.reasoning || data.topFeatures) {
-          return {
-            reasoning: data.reasoning,
-            topFeatures: data.topFeatures
-          };
-        }
-      }
-    } catch (e) {
-      // JSON parse failed, try regex
-    }
-
-    const reasoningMatch = text.match(/reasoning[:\s]+(.*?)(?=\n|$)/i);
-    return {
-      reasoning: reasoningMatch ? reasoningMatch[1] : 'The AI analyzed molecular descriptors and structure to generate this prediction.',
-      topFeatures: []
+      success: true,
+      summary: text,
+      corrections,
+      safe,
+      model: MODEL_ID,
+      executionTimeMs: Date.now() - startTime,
     };
   }
 }
 
 module.exports = AIPredictionService;
+module.exports.PHARMACOLOGY_PRIORS = PHARMACOLOGY_PRIORS;
+module.exports.validateAndSanitiseResponse = validateAndSanitiseResponse;
+module.exports.buildValidatedContext = buildValidatedContext;

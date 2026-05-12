@@ -426,8 +426,11 @@ export const MOCK_PREDICTIONS: Record<string, XAIPrediction> = {
 
 export const AVAILABLE_MOLECULES = Object.keys(MOCK_PREDICTIONS);
 
-// Generate XAI prediction for custom SMILES input
+// DEPRECATED: Use runXAIAnalysis() from xai-pipeline.ts instead
+// This function generates FAKE descriptors and should NOT be used for real analysis
 export function generateCustomPrediction(smiles: string): XAIPrediction {
+  console.warn("[DEPRECATED] generateCustomPrediction() uses fake descriptors. Use runXAIAnalysis() instead.");
+  
   const seed = smiles.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const rng = (offset: number) => ((Math.sin(seed + offset) * 10000) % 1 + 1) % 1;
 

@@ -150,9 +150,12 @@ const Classroom = () => {
   const [selectedScenario, setSelectedScenario] = useState(SCENARIOS[0].id);
   const [chatInput, setChatInput] = useState("");
   const [loadingCompounds, setLoadingCompounds] = useState<Set<string>>(new Set());
+  const [pubchemErrors, setPubchemErrors] = useState<Record<string, string>>({});
   const simulationRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const studentIndexRef = useRef<Map<string, number>>(new Map());
   const compoundIndexRef = useRef<Map<string, number>>(new Map());
+  // Store scenarioId per session so the interval closure never goes stale
+  const scenarioIdRef = useRef<Map<string, string>>(new Map());
 
   // Keep activeSession in sync with sessions state
   useEffect(() => {
@@ -183,7 +186,19 @@ const Classroom = () => {
         fetchPubChemName(compound.smiles),
       ]);
 
-      if (!result) return;
+      if (!result) {
+        setPubchemErrors(prev => ({
+          ...prev,
+          [sessionId]: `PubChem fetch failed for ${compound.smiles.slice(0, 20)}… — retrying next cycle`,
+        }));
+        // Roll back the indices so the same compound is retried next cycle
+        compoundIndexRef.current.set(sessionId, idx);
+        studentIndexRef.current.set(sessionId, studentIdx);
+        return;
+      }
+
+      // Clear any previous error for this session on success
+      setPubchemErrors(prev => { const n = { ...prev }; delete n[sessionId]; return n; });
 
       const moleculeName = commonName ?? result.name;
       const lipinskiPass = checkLipinski(result.mw, result.logp, result.hDonors, result.hAcceptors);
@@ -229,7 +244,9 @@ const Classroom = () => {
         return {
           ...s,
           studentWork: [...agedWork, submission],
-          students: Math.max(s.students, agedWork.length + 1),
+          // Track enrolled students separately from submission count.
+          // Enrolled = max of the pre-set roster size and actual unique submitters.
+          students: Math.max(s.students, studentIndexRef.current.get(sessionId) ?? 1),
           chat: newChat,
         };
       }));
@@ -246,23 +263,28 @@ const Classroom = () => {
   const startSimulation = useCallback((sessionId: string) => {
     if (simulationRefs.current.has(sessionId)) return;
 
-    const session = sessions.find(s => s.id === sessionId);
-    if (!session) return;
+    // Read scenario from state at call time and store in a ref so the
+    // interval closure never captures a stale sessions value.
+    setSessions(prev => {
+      const session = prev.find(s => s.id === sessionId);
+      if (!session) return prev;
+      const scenarioId = SCENARIOS.find(sc => sc.label === session.scenario)?.id ?? "nsaid";
+      scenarioIdRef.current.set(sessionId, scenarioId);
+      return prev.map(s => s.id === sessionId ? { ...s, simulating: true } : s);
+    });
 
-    // Find scenario ID from label
-    const scenarioId = SCENARIOS.find(sc => sc.label === session.scenario)?.id ?? "nsaid";
-
-    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, simulating: true } : s));
-
-    // Immediately fetch first
+    // Immediately fetch first submission
+    const scenarioId = scenarioIdRef.current.get(sessionId) ?? "nsaid";
     addRealSubmission(sessionId, scenarioId);
 
     const interval = setInterval(() => {
-      addRealSubmission(sessionId, scenarioId);
+      // Always read from ref — never from a closed-over variable
+      const sid = scenarioIdRef.current.get(sessionId) ?? "nsaid";
+      addRealSubmission(sessionId, sid);
     }, 4000 + Math.random() * 3000); // 4-7 seconds
 
     simulationRefs.current.set(sessionId, interval);
-  }, [sessions, addRealSubmission]);
+  }, [addRealSubmission]);
 
   const stopSimulation = useCallback((sessionId: string) => {
     const interval = simulationRefs.current.get(sessionId);
@@ -270,6 +292,8 @@ const Classroom = () => {
       clearInterval(interval);
       simulationRefs.current.delete(sessionId);
     }
+    scenarioIdRef.current.delete(sessionId);
+    setPubchemErrors(prev => { const n = { ...prev }; delete n[sessionId]; return n; });
     setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, simulating: false } : s));
   }, []);
 
@@ -548,6 +572,11 @@ const Classroom = () => {
                         {loadingCompounds.has(activeSession.id) && (
                           <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
                         )}
+                        {pubchemErrors[activeSession.id] && (
+                          <span className="text-[10px] font-mono text-destructive flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> {pubchemErrors[activeSession.id]}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 mt-1">
                         <Badge variant="outline" className="text-[10px] font-mono">{activeSession.joinCode}</Badge>
@@ -687,7 +716,7 @@ const Classroom = () => {
                         <AnalyticsBar label="MW within range (150–500)" value={activeSession.studentWork.length ? Math.round(activeSession.studentWork.filter(w => w.mw >= 150 && w.mw <= 500).length / activeSession.studentWork.length * 100) : 0} />
                         <AnalyticsBar label="LogP within range (0–5)" value={activeSession.studentWork.length ? Math.round(activeSession.studentWork.filter(w => w.logP >= 0 && w.logP <= 5).length / activeSession.studentWork.length * 100) : 0} />
                         <AnalyticsBar label="TPSA < 140 (oral absorption)" value={activeSession.studentWork.length ? Math.round(activeSession.studentWork.filter(w => w.tpsa < 140).length / activeSession.studentWork.length * 100) : 0} />
-                        <AnalyticsBar label="Submission Rate" value={activeSession.students > 0 ? Math.min(100, Math.round(activeSession.studentWork.length / activeSession.students * 100)) : 0} />
+                        <AnalyticsBar label="Submission Rate" value={activeSession.students > 0 ? Math.min(100, Math.round(activeSession.studentWork.length / activeSession.students * 100)) : activeSession.studentWork.length > 0 ? 100 : 0} />
                       </div>
                       <div className="grid grid-cols-3 gap-3 mt-4">
                         {activeSession.studentWork.filter(w => !w.lipinskiPass).slice(0, 3).map(w => (

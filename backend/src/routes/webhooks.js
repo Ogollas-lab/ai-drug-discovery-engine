@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { sendSubscriptionUpgradeEmail } = require('../services/emailService');
+const { sendSubscriptionUpgradeEmail } = require('../services/EmailService');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || '');
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || '';

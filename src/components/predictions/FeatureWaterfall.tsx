@@ -9,7 +9,7 @@ interface Props {
 const FeatureWaterfall = ({ contributions }: Props) => {
   const data = contributions.map((c) => ({
     name: c.feature,
-    value: Math.round(c.value * 100) / 100,
+    value: c.value != null ? Math.round(c.value * 100) / 100 : 0,
     weight: c.weight,
     score: Math.round(c.weight * (c.impact === "positive" ? 100 : c.impact === "neutral" ? 50 : 20)),
     impact: c.impact,

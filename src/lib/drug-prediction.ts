@@ -64,6 +64,9 @@ export function predictDrugSuccess(input: PredictionInput): PredictionOutput {
   const contributions: FeatureContribution[] = [];
   const riskFlags: string[] = [];
 
+  // logp may be null when PubChem has no XLogP value; treat as 0 for scoring.
+  const logp = molecule.logp ?? 0;
+
   // --- Feature extraction & scoring ---
 
   // 1. Molecular Weight (optimal 150-500 Da)
@@ -80,17 +83,17 @@ export function predictDrugSuccess(input: PredictionInput): PredictionOutput {
   if (molecule.mw > 500) riskFlags.push("MW exceeds 500 Da (Lipinski violation)");
 
   // 2. LogP (optimal 0-5)
-  const logpScore = molecule.logp >= 0 && molecule.logp <= 5
-    ? 85 + (molecule.logp >= 1 && molecule.logp <= 3 ? 15 : 0)
-    : molecule.logp < 0 ? 50 : clamp(100 - (molecule.logp - 5) * 15);
+  const logpScore = logp >= 0 && logp <= 5
+    ? 85 + (logp >= 1 && logp <= 3 ? 15 : 0)
+    : logp < 0 ? 50 : clamp(100 - (logp - 5) * 15);
   contributions.push({
     feature: "LogP (Lipophilicity)",
-    value: molecule.logp,
+    value: logp,
     weight: 0.15,
     impact: logpScore >= 70 ? "positive" : logpScore >= 40 ? "neutral" : "negative",
-    description: `LogP = ${molecule.logp.toFixed(2)} ${molecule.logp > 5 ? "(too lipophilic)" : "(optimal)"}`,
+    description: `LogP = ${logp.toFixed(2)} ${logp > 5 ? "(too lipophilic)" : "(optimal)"}`,
   });
-  if (molecule.logp > 5) riskFlags.push("LogP > 5 (poor solubility risk)");
+  if (logp > 5) riskFlags.push("LogP > 5 (poor solubility risk)");
 
   // 3. H-Bond Donors (≤ 5)
   const hDonorScore = molecule.hDonors <= 5 ? 95 : clamp(95 - (molecule.hDonors - 5) * 20);
@@ -192,7 +195,7 @@ export function predictDrugSuccess(input: PredictionInput): PredictionOutput {
     tpsaScore * 0.2 +
     rotScore * 0.15 +
     metabScore * 0.15 +
-    (molecule.logp <= 5 ? 85 : 30) * 0.2
+    (logp <= 5 ? 85 : 30) * 0.2
   );
 
   const overallScore = clamp(efficacyScore * 0.55 + safetyScore * 0.45);
@@ -204,7 +207,7 @@ export function predictDrugSuccess(input: PredictionInput): PredictionOutput {
   // Lipinski violations count
   const lipinskiViolations = [
     molecule.mw > 500,
-    molecule.logp > 5,
+    logp > 5,
     molecule.hDonors > 5,
     molecule.hAcceptors > 10,
   ].filter(Boolean).length;
@@ -218,7 +221,7 @@ export function predictDrugSuccess(input: PredictionInput): PredictionOutput {
   // Recommendations
   const recommendations: string[] = [];
   if (molecule.mw > 500) recommendations.push("Consider fragment-based optimization to reduce MW below 500 Da");
-  if (molecule.logp > 5) recommendations.push("Add polar groups (hydroxyl, amine) to improve solubility");
+  if (logp > 5) recommendations.push("Add polar groups (hydroxyl, amine) to improve solubility");
   if (molecule.tpsa > 140) recommendations.push("Reduce polar surface area for better membrane permeability");
   if (molecule.rotBonds > 10) recommendations.push("Introduce ring constraints to reduce conformational flexibility");
   if (overallScore >= 75) recommendations.push("Proceed to in-vitro validation and ADMET profiling");

@@ -66,6 +66,15 @@ const ClinicalSafetyPanel = ({ result }: ClinicalSafetyPanelProps) => {
         <div className="flex items-center gap-2 text-xs font-display font-semibold">
           <Activity className="w-3.5 h-3.5 text-accent" />
           <ConceptTooltip conceptKey="admet">ADMET</ConceptTooltip> Snapshot
+          <span className={`ml-auto px-1.5 py-0.5 rounded text-[9px] font-mono border ${
+            result.admet.admetConfidence === "experimental"
+              ? "bg-primary/10 text-primary border-primary/20"
+              : result.admet.admetConfidence === "literature"
+              ? "bg-blue-400/10 text-blue-400 border-blue-400/20"
+              : "bg-yellow-400/10 text-yellow-400 border-yellow-400/20"
+          }`}>
+            {result.admet.admetConfidence}
+          </span>
         </div>
         <div className="space-y-1.5">
           {[
@@ -81,11 +90,20 @@ const ClinicalSafetyPanel = ({ result }: ClinicalSafetyPanelProps) => {
           ))}
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-muted-foreground font-mono">CYP3A4 Substrate</span>
-            <span className={`text-[10px] font-mono ${result.admet.cyp3a4 ? "text-yellow-400" : "text-primary"}`}>
-              {result.admet.cyp3a4 ? "Yes" : "No"}
+            <span className={`text-[10px] font-mono ${result.admet.cyp3a4Substrate ? "text-yellow-400" : "text-primary"}`}>
+              {result.admet.cyp3a4Substrate ? "Yes" : "No"}
             </span>
           </div>
+          {result.admet.cyp3a4Inhibitor && (
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground font-mono">CYP3A4 Inhibitor</span>
+              <span className="text-[10px] font-mono text-yellow-400">Yes</span>
+            </div>
+          )}
         </div>
+        {result.admet.admetNote && (
+          <p className="text-[9px] text-muted-foreground/70 italic leading-relaxed">{result.admet.admetNote}</p>
+        )}
       </div>
 
       {/* DDI Warnings */}
@@ -141,6 +159,11 @@ const ClinicalSafetyPanel = ({ result }: ClinicalSafetyPanelProps) => {
                 />
               </div>
               <span className="text-[10px] font-mono text-muted-foreground w-8 text-right">{ot.score.toFixed(2)}</span>
+              <span className={`text-[9px] font-mono px-1 rounded ${
+                ot.scoreLabel === "experimental" ? "bg-primary/10 text-primary" :
+                ot.scoreLabel === "literature" ? "bg-blue-400/10 text-blue-400" :
+                "bg-secondary text-muted-foreground"
+              }`}>{ot.scoreLabel}</span>
             </div>
           ))}
         </div>

@@ -50,13 +50,15 @@ export function predictForDisease(input: DiseasePredictionInput): DiseasePredict
   };
 
   const mwInRange = molecule.mw >= profile.mwRange[0] && molecule.mw <= profile.mwRange[1];
-  const logpInRange = molecule.logp >= profile.logpRange[0] && molecule.logp <= profile.logpRange[1];
+  // logp may be null when PubChem has no XLogP; treat as 0 for scoring.
+  const logpVal = molecule.logp ?? 0;
+  const logpInRange = logpVal >= profile.logpRange[0] && logpVal <= profile.logpRange[1];
   const tpsaOk = molecule.tpsa <= profile.tpsaMax;
 
   // Disease-adjusted MW score
   const mwScore = mwInRange ? 92 : clamp(60 - Math.abs(molecule.mw - (profile.mwRange[0] + profile.mwRange[1]) / 2) * 0.15);
   // Disease-adjusted LogP score
-  const logpScore = logpInRange ? 88 : clamp(50 - Math.abs(molecule.logp - (profile.logpRange[0] + profile.logpRange[1]) / 2) * 10);
+  const logpScore = logpInRange ? 88 : clamp(50 - Math.abs(logpVal - (profile.logpRange[0] + profile.logpRange[1]) / 2) * 10);
   // Disease-adjusted TPSA score
   const tpsaScore = tpsaOk ? 90 : clamp(90 - (molecule.tpsa - profile.tpsaMax) * 0.8);
 
@@ -95,13 +97,13 @@ export function predictForDisease(input: DiseasePredictionInput): DiseasePredict
     if (check.condition === "mw > 600" && molecule.mw > 600) triggered = true;
     if (check.condition === "mw > 700" && molecule.mw > 700) triggered = true;
     if (check.condition === "mw > 800" && molecule.mw > 800) triggered = true;
-    if (check.condition === "logp > 5" && molecule.logp > 5) triggered = true;
-    if (check.condition === "logp < -1" && molecule.logp < -1) triggered = true;
+    if (check.condition === "logp > 5" && logpVal > 5) triggered = true;
+    if (check.condition === "logp < -1" && logpVal < -1) triggered = true;
     if (check.condition === "tpsa > 140" && molecule.tpsa > 140) triggered = true;
     if (check.condition === "tpsa > 200" && molecule.tpsa > 200) triggered = true;
     if (check.condition === "rotBonds > 10" && molecule.rotBonds > 10) triggered = true;
-    if (check.condition === "hepatotoxicity" && molecule.logp > 4) triggered = true;
-    if (check.condition === "cyp3a4" && molecule.logp > 3) triggered = true;
+    if (check.condition === "hepatotoxicity" && logpVal > 4) triggered = true;
+    if (check.condition === "cyp3a4" && logpVal > 3) triggered = true;
     if (check.condition === "renal" && molecule.mw > 400 && molecule.tpsa < 60) triggered = true;
     if (check.condition === "myelosuppression" && molecule.mw < 200) triggered = true;
     if (triggered) diseaseFlags.push(`[${check.severity.toUpperCase()}] ${check.flag}`);
@@ -110,7 +112,7 @@ export function predictForDisease(input: DiseasePredictionInput): DiseasePredict
   // Oral bioavailability check
   if (profile.oralBioavailabilityPriority === "critical") {
     const lipinskiViolations = [
-      molecule.mw > 500, molecule.logp > 5, molecule.hDonors > 5, molecule.hAcceptors > 10,
+      molecule.mw > 500, logpVal > 5, molecule.hDonors > 5, molecule.hAcceptors > 10,
     ].filter(Boolean).length;
     if (lipinskiViolations >= 2) {
       diseaseFlags.push(`[CRITICAL] Multiple Lipinski violations — oral bioavailability is critical for ${disease.name} treatment in resource-limited settings`);
@@ -156,7 +158,7 @@ export function predictForDisease(input: DiseasePredictionInput): DiseasePredict
 
   // Verdict
   const lipinskiViolations = [
-    molecule.mw > 500, molecule.logp > 5, molecule.hDonors > 5, molecule.hAcceptors > 10,
+    molecule.mw > 500, logpVal > 5, molecule.hDonors > 5, molecule.hAcceptors > 10,
   ].filter(Boolean).length;
 
   const verdict: PredictionOutput["verdict"] =

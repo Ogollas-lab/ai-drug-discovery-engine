@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu } from "lucide-react";
+import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SAMPLE_MOLECULES, generateMoleculeResultReal, type MoleculeResult, type TargetInfo } from "@/data/targets";
@@ -18,18 +18,24 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
   const [result, setResult] = useState<MoleculeResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const analyze = async () => {
     setAnalyzing(true);
     setResult(null);
+    setError(null);
     onResult(null);
     try {
       const res = await generateMoleculeResultReal(smiles);
-      setResult(res);
-      onResult(res);
-      onSmilesChange?.(smiles, res.name);
+      if (!res) {
+        setError(`"${smiles.slice(0, 40)}" could not be resolved. Check your SMILES string or try a compound name like "Aspirin".`);
+      } else {
+        setResult(res);
+        onResult(res);
+        onSmilesChange?.(smiles, res.name);
+      }
     } catch {
-      // Fallback handled inside generateMoleculeResultReal
+      setError("Network error fetching from PubChem. Check your connection and try again.");
     }
     setAnalyzing(false);
   };
@@ -127,6 +133,13 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
             </motion.div>
           )}
 
+          {error && !analyzing && (
+            <motion.div key="error" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-3 mt-4">
+              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+              <p className="text-xs text-destructive/90">{error}</p>
+            </motion.div>
+          )}
+
           {result && !analyzing && (
             <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
               {/* Name & Status */}
@@ -163,25 +176,28 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
                 {result.dataSource === "pubchem" ? "Real data · PubChem" : "Predicted · Model"}
               </div>
 
-              {/* Binding Affinity */}
+              {/* GNN Target Engagement Score */}
               <div className="glass-panel rounded-xl p-4 glow-border space-y-2">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-muted-foreground">Binding Affinity (GAT prediction)</span>
-                  <span className="text-primary text-lg font-display font-bold">{result.affinity.toFixed(2)}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground">{result.engagementScoreLabel}</span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-yellow-400/10 text-yellow-400 border border-yellow-400/20">
+                      predicted · not experimental
+                    </span>
+                  </div>
+                  <span className="text-primary text-lg font-display font-bold">{result.gnnEngagementScore.toFixed(2)}</span>
                 </div>
                 <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${result.affinity * 100}%` }}
+                    animate={{ width: `${result.gnnEngagementScore * 100}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
                     className="h-full rounded-full bg-gradient-to-r from-primary to-neon-cyan"
                   />
                 </div>
-                {!expertMode && (
-                  <p className="text-[10px] text-muted-foreground">
-                    Score ranges 0–1. Higher = stronger predicted binding. Affinity is model-estimated; physicochemical properties are from PubChem.
-                  </p>
-                )}
+                <p className="text-[10px] text-muted-foreground">
+                  {result.engagementScoreProvenance}
+                </p>
 
                 {/* Explainable AI (XAI) Panel */}
                 {result.xai && (
