@@ -43,7 +43,12 @@ export default function Login() {
       <div className="container max-w-md mx-auto px-4 py-16">
         <Card>
           <CardHeader>
-            <CardTitle className="font-display">Sign in to Pawanax AI</CardTitle>
+            <CardTitle className="font-display text-balance">
+              Sign in to Vitalis AI Drug Engine
+            </CardTitle>
+            <p className="text-xs font-mono text-muted-foreground mt-1">
+              Powered by Pawanax AI
+            </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

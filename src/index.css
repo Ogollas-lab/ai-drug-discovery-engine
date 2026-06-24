@@ -7,13 +7,13 @@
 @layer base {
   :root {
     --background: 220 20% 4%;
-    --foreground: 160 20% 90%;
+    --foreground: 0 5% 92%;
 
     --card: 220 18% 7%;
-    --card-foreground: 160 20% 90%;
+    --card-foreground: 0 5% 92%;
 
     --popover: 220 18% 7%;
-    --popover-foreground: 160 20% 90%;
+    --popover-foreground: 0 5% 92%;
 
     --primary: 357 78% 52%;
     --primary-foreground: 0 0% 100%;
@@ -63,6 +63,26 @@
 }
 
 @layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
   .font-display {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }

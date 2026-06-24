@@ -2,6 +2,7 @@
   "name": "pawanax-ai",
   "private": true,
   "version": "3.0.0",
+  "description": "Vitalis AI Drug Engine — in-silico discovery platform powered by Pawanax AI",
   "type": "module",
   "packageManager": "pnpm@10.27.0",
   "scripts": {

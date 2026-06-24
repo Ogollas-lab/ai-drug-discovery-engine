@@ -1,190 +1,521 @@
-# Vitalis AI 🧬
+<p align="center">
+  <img src="public/pawanax-logo.png" alt="Pawanax AI" width="96" />
+</p>
 
-> AI-powered, in-silico drug discovery platform built for researchers, educators, and students across Africa.
+<h1 align="center">Vitalis AI Drug Engine</h1>
+<p align="center"><strong>Research-grade in-silico drug discovery — powered by <em>Pawanax AI</em></strong></p>
 
-🔗 **Live App:** [https://mole-whisperer.lovable.app](https://mole-whisperer.lovable.app)
-
----
-
-## 🌍 Mission
-
-Traditional drug discovery takes 10+ years and billions of dollars in offshore labs. **Vitalis AI** brings computational drug discovery directly to African researchers — using AI to predict molecular binding, screen virtual compounds, and analyze drug safety profiles. Our goal: make discovery **10× faster** and **1000× cheaper**, with a focus on diseases that disproportionately affect the continent (Malaria, Tuberculosis, Sickle Cell, NTDs, and more).
-
----
-
-## ✨ Key Features
-
-### 🧪 Discovery & Analysis
-- **Molecule Analyzer** — Draw, modify, and inspect molecular structures with real-time property calculation
-- **AI Virtual Screening** — Batch-screen compound libraries against protein targets
-- **Compound Screening Tool** — High-throughput virtual screening at `/screening`
-- **What-If Chemist** — Interactive scaffold modifications with real-time delta comparisons
-
-### 🤖 AI & Predictions
-- **GAT Predictor** — Graph Attention Network for binding affinity (probabilistic outputs only)
-- **Drug Success Prediction** — Lipinski, Veber, ADMET evaluation at `/predictions`
-- **Validation Layer** — Cross-checks AI predictions against known experimental evidence
-- **Disease-Specific Models** — Tailored scoring for African health challenges
-
-### 🔬 Explainability (XAI)
-- **SHAP Beeswarm & Waterfall** — Per-feature contribution analysis
-- **LIME Weights, Decision Pathways, Confidence Panels**
-- **Molecule Comparison & Feature Heatmaps**
-
-### 📚 Education & Collaboration
-- **Education Hub** — Learning paths and virtual lab with clinical case scenarios (`/education`)
-- **Classroom Mode** — Instructor-led sessions with real-time student simulation and spotlight dashboard
-- **Onboarding Tour** — 5-step story-driven introduction
-- **Pipeline Timeline** — 8-stage drug discovery visualization with attrition funnel (`/pipeline`)
-
-### 📊 Data & Transparency
-- **Datasets Hub** — BindingDB, PDB, PubChem, ChEMBL ingestion
-- **Training Pipeline** — Continuous learning from validated datasets (`/training`)
-- **Benchmarks Page** — Transparent GAT/GCN model performance metrics
-- **Student vs Expert Toggle** — Switch between simplified clinical terms and raw algorithmic data
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#environment-variables">Environment</a> ·
+  <a href="#routes">Routes</a> ·
+  <a href="ENGINE.md">Engine Status</a>
+</p>
 
 ---
 
-## 🏗️ Tech Stack
+## What you are looking at
 
-### Frontend
-- **React 18** + **Vite** + **TypeScript**
-- **Tailwind CSS** with semantic design tokens (biotech dark theme — neon green/cyan accents, glassmorphism)
-- **shadcn/ui** components
-- **Framer Motion** for animations
-- **Recharts** for data visualization
-- Fonts: **Space Grotesk** (UI) + **JetBrains Mono** (data)
+When you open this repository, you will find **two names that work together**:
 
-### Backend
-- **Node.js** + **Express.js**
-- **LangChain** + **LangGraph** — multi-agent DMTA orchestration
-- **Neon Postgres** (optional) — runs, provenance, predictions
-- **BullMQ** + **Redis** (optional) — async job queue
-- **NVIDIA NIM** / **DeepSeek-class** reasoner via model gateway
-- **MongoDB** (legacy auth/subscription)
-- **Google Gemini** — fallback reasoning
+| Name | Role | Think of it as… |
+|------|------|-----------------|
+| **Vitalis AI Drug Engine** | The **product** — workflows, UI, DMTA pipeline, persistence | The laboratory instrument |
+| **Pawanax AI** | The **intelligence** — NVIDIA NIM, LangChain agents, reasoning | The scientist operating the instrument |
 
-### Data Sources
-- **PubChem REST API** — physicochemical properties (real, experimental)
-- **ChEMBL** — bioactive molecules and assay data
-- **Internal GAT/GCN models** — binding & off-target predictions (clearly badged as predicted)
+The red **Pawanax** logo marks the AI layer. **Vitalis** is the engine researchers interact with daily.
 
 ---
 
-## 🚀 Quick Start
+## Mission
+
+Traditional drug discovery takes 10+ years and billions of dollars. **Vitalis AI Drug Engine** compresses the *Design → Make → Test → Analyze* (DMTA) loop into hours of in-silico work — with **honest uncertainty labels**, PubChem-validated descriptors, and human-in-the-loop (HITL) safety gates before any high-risk recommendation proceeds.
+
+Built for researchers, educators, and teams focused on diseases that disproportionately affect underserved populations (malaria, TB, sickle cell, NTDs).
+
+---
+
+## System overview
+
+```mermaid
+flowchart TB
+  subgraph UI["Vitalis UI — React + Vite"]
+    WS[Workspace]
+    SCR[Screening]
+    PIPE[Pipeline]
+  end
+
+  subgraph API["Express API :5000"]
+    ENG["/api/engine/*"]
+    AUTH["/api/auth/*"]
+    LEG["Legacy routes"]
+  end
+
+  subgraph Pawanax["Pawanax AI — Intelligence Layer"]
+    LG[LangGraph DMTA Supervisor]
+    GW[Model Gateway]
+    MOL[MolMIM NIM]
+    LLM[Llama 3.3 70B Reasoner]
+  end
+
+  subgraph Data["Deterministic Science"]
+    PC[PubChem REST]
+    QED[QED / PAINS / Veber / hERG]
+    RULES[Drug Rules Engine]
+  end
+
+  subgraph Store["Persistence"]
+    NEON[(Neon Postgres)]
+    MONGO[(MongoDB — auth)]
+    REDIS[(Redis — optional queue)]
+  end
+
+  UI --> ENG
+  ENG --> LG
+  LG --> GW
+  GW --> MOL
+  GW --> LLM
+  LG --> QED
+  LG --> PC
+  LG --> RULES
+  ENG --> NEON
+  AUTH --> MONGO
+  ENG --> REDIS
+```
+
+---
+
+## DMTA workflow (what happens when you click Analyze)
+
+```mermaid
+sequenceDiagram
+  participant R as Researcher
+  participant V as Vitalis Workspace
+  participant E as Engine API
+  participant P as Pawanax Supervisor
+  participant N as NVIDIA NIM
+  participant DB as Postgres / Memory
+
+  R->>V: Enter SMILES + target
+  V->>E: POST /api/engine/analyze
+  E->>E: PubChem + QED/PAINS/Veber
+  E-->>V: Sync scientific assessment
+
+  V->>E: POST /api/engine/runs
+  E->>DB: Create run record
+  E->>P: enqueue DMTA workflow
+
+  P->>P: 1. Discovery (descriptors)
+  P->>N: 2. MolMIM optimization
+  P->>N: 3. Docking stub
+  P->>P: 4. Analysis + safety
+  alt requires HITL
+    P->>DB: awaiting_hitl
+    V->>E: POST approve/reject
+  end
+  P->>N: 5. SAR report (Llama 3.3)
+  P->>DB: completed + provenance
+  E-->>V: SSE progress events
+```
+
+---
+
+## Brand & design system
+
+```mermaid
+mindmap
+  root((Vitalis Experience))
+    Product
+      Vitalis AI Drug Engine
+      Red clinical theme
+      Mobile-first 320px+
+    Intelligence
+      Pawanax AI logo
+      NVIDIA MolMIM
+      LangChain agents
+    Trust
+      PubChem experimental badges
+      predicted not experimental labels
+      DemoBanner on sim pages
+      HITL safety gates
+```
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--primary` | `357 78% 52%` | Pawanax red — CTAs, active nav |
+| `--foreground` | `0 5% 92%` | Neutral lab grey text |
+| `--background` | `220 20% 4%` | Dark research shell |
+| Touch targets | `min 44px` | Mobile `.touch-target` utility |
+
+**Fonts:** Space Grotesk (UI) · JetBrains Mono (data, SMILES, provenance)
+
+---
+
+## Tech stack
+
+```mermaid
+graph LR
+  subgraph Frontend
+    R[React 18]
+    V[Vite + TS]
+    T[Tailwind + shadcn]
+    F[Framer Motion]
+  end
+
+  subgraph Backend
+    X[Express.js]
+    LC[LangChain / LangGraph]
+    J[Jest tests]
+  end
+
+  subgraph Infra
+    PG[Neon Postgres]
+    RD[Redis / BullMQ]
+    MG[MongoDB]
+  end
+
+  subgraph Models
+    NV[NVIDIA NIM]
+    GM[Gemini fallback]
+  end
+
+  Frontend --> Backend
+  Backend --> PG
+  Backend --> RD
+  Backend --> MG
+  Backend --> NV
+  Backend --> GM
+```
+
+| Layer | Technology | You configure it in… |
+|-------|------------|----------------------|
+| Web app | React 18, Vite, TypeScript, pnpm | `package.json`, `vite.config.ts` |
+| UI kit | shadcn/ui, Tailwind, Framer Motion | `src/index.css`, `tailwind.config.ts` |
+| API | Express 4, CommonJS | `backend/src/index.js` |
+| Orchestration | LangGraph DMTA supervisor | `backend/src/engine/orchestrator/` |
+| Models | NVIDIA NIM (Pawanax), Gemini fallback | `backend/.env` |
+| Persistence | Neon Postgres + in-memory fallback | `DATABASE_URL` |
+| Queue | BullMQ + in-process fallback | `REDIS_URL` |
+| Auth (legacy) | MongoDB + JWT | `MONGODB_URI` |
+
+---
+
+## Quick start
+
+When you clone this repo, follow these steps in order. Each step builds on the previous one.
 
 ### Prerequisites
-- Node.js 18+
-- npm or bun
-- MongoDB (only required if running the backend locally)
 
-### 1. Frontend + Backend (recommended)
+- **Node.js 18+**
+- **pnpm 10+** (`corepack enable && corepack prepare pnpm@latest --activate`)
+- Optional: MongoDB (auth), Postgres (Neon), Redis, NVIDIA API key
+
+### 1. Install dependencies
+
 ```bash
 pnpm install
+```
+
+### 2. Configure secrets
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Open `backend/.env` and set at minimum:
+
+```env
+NVIDIA_API_KEY=nvapi-...          # Pawanax AI — MolMIM + reasoning
+DATABASE_URL=postgresql://...     # Optional — falls back to in-memory
+```
+
+See [Environment variables](#environment-variables) for the full reference.
+
+### 3. Run migrations (when Postgres is configured)
+
+```bash
+pnpm db:migrate
+```
+
+### 4. Start development servers
+
+```bash
 pnpm dev
 ```
-- Web: `http://localhost:8080`
-- API + Engine: `http://localhost:5000`
 
-### 2. Frontend only
+| Service | URL | What you will see |
+|---------|-----|-------------------|
+| **Vitalis UI** | http://localhost:8080 | Landing, Workspace, Screening |
+| **Engine API** | http://localhost:5000 | `/api/engine/health` |
+
+### 5. Verify everything works
+
 ```bash
-pnpm install
-pnpm dev:web
+pnpm test                    # Unit tests (frontend + backend)
+pnpm test:integration        # NVIDIA live tests (requires NVIDIA_API_KEY)
+pnpm build                   # Production build
 ```
 
-### 3. Backend only
-```bash
-pnpm install
-pnpm dev:api
+---
+
+## Environment variables
+
+### Frontend (`vite` — optional)
+
+Create `.env.local` at repo root if you need a non-default API host:
+
+```env
+VITE_API_URL=http://localhost:5000
 ```
-Copy `backend/.env.example` → `backend/.env` and set keys (NVIDIA, Neon, etc.).
 
-See [`backend/README.md`](./backend/README.md) and [`backend/API_DOCUMENTATION.md`](./backend/API_DOCUMENTATION.md) for full API reference.
+### Backend (`backend/.env`) — complete reference
+
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|---------|
+| `PORT` | No | `5000` | Express listen port |
+| `NODE_ENV` | No | `development` | `test` skips Mongo auto-connect |
+| `CORS_ORIGIN` | No | `http://localhost:8080` | Allowed browser origin |
+| `FRONTEND_URL` | No | `http://localhost:8080` | Redirect / email links |
+| `MONGODB_URI` | For auth | `mongodb://localhost:27017/vitalis-ai` | User accounts, subscriptions |
+| `DATABASE_URL` | Recommended | — | Neon Postgres for runs, provenance, HITL |
+| `REDIS_URL` | Optional | — | BullMQ async jobs; in-process if unset |
+| `NVIDIA_API_KEY` | **For Pawanax AI** | — | MolMIM, Llama, docking stub |
+| `NVIDIA_BASE_URL` | No | `https://integrate.api.nvidia.com/v1` | Chat completions |
+| `NVIDIA_REASONING_MODEL` | No | `meta/llama-3.3-70b-instruct` | SAR reports, agent reasoning |
+| `NVIDIA_CHAT_MODEL` | No | `meta/llama-3.1-8b-instruct` | Fast chat / tool calls |
+| `NVIDIA_MOLMIM_URL` | No | `https://health.api.nvidia.com/v1/biology/nvidia/molmim/generate` | Lead optimization |
+| `GEMINI_API_KEY` | Fallback | — | Used when NVIDIA key absent |
+| `GEMINI_MODEL` | No | `gemini-2.5-flash-lite` | Gemini model id |
+| `ENGINE_REQUIRE_AUTH` | No | `false` | Gate engine routes behind JWT |
+| `DEFAULT_MODEL_PROVIDER` | No | `nvidia` | `nvidia` \| `gemini` \| mock |
+| `JWT_SECRET` | Production | — | Sign auth tokens |
+| `STRIPE_SECRET_KEY` | Billing | — | Subscription payments |
+| `STRIPE_WEBHOOK_SECRET` | Billing | — | Stripe webhooks |
+
+```mermaid
+flowchart LR
+  ENV[backend/.env] --> NV{NVIDIA_API_KEY set?}
+  NV -->|Yes| PAW[Pawanax AI live]
+  NV -->|No| GEM{GEMINI_API_KEY?}
+  GEM -->|Yes| GEMM[Gemini fallback]
+  GEM -->|No| MOCK[Mock reasoning — dev only]
+
+  ENV --> DB{DATABASE_URL?}
+  DB -->|Yes| NEON[Neon Postgres]
+  DB -->|No| MEM[In-memory store]
+
+  ENV --> RQ{REDIS_URL?}
+  RQ -->|Yes| BULL[BullMQ workers]
+  RQ -->|No| INLINE[In-process queue]
+```
+
+> **Security:** Never commit `.env` files. Rotate keys if exposed. CI uses ephemeral Postgres — not your production Neon branch.
 
 ---
 
-## 🗺️ Main Routes
+## Engine API (Pawanax-powered)
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page with hero, features, and pipeline overview |
-| `/workspace` | Mission-control clinical dashboard (4-column layout) |
-| `/screening` | Batch compound screening |
-| `/predictions` | Drug success prediction (Lipinski, Veber, ADMET) |
-| `/pipeline` | 8-stage discovery timeline with attrition funnel |
-| `/xai` | Explainability dashboard (SHAP, LIME, decision paths) |
-| `/validation` | Validate AI predictions against experimental evidence |
-| `/training` | Dataset ingestion + continuous training pipeline |
-| `/datasets` | Browse BindingDB, PDB, PubChem, ChEMBL |
-| `/benchmarks` | Model performance transparency |
-| `/education` | Learning hub + virtual lab |
-| `/classroom` | Instructor-led collaborative mode |
-| `/pricing` | Subscription tiers |
+```mermaid
+flowchart LR
+  H[GET /health] --> OK[Status + providers]
+  A[POST /analyze] --> SYNC[Sync PubChem science]
+  R[POST /runs] --> ASYNC[Async DMTA]
+  E[GET /runs/:id/events] --> SSE[SSE stream]
+  AP[POST /approve] --> HITL[HITL resolve]
+  RJ[POST /reject] --> HITL
+```
 
----
+| Method | Path | Returns |
+|--------|------|---------|
+| `GET` | `/api/engine/health` | DB, queue, model provider status |
+| `POST` | `/api/engine/analyze` | `{ success, analysis, provenance }` |
+| `POST` | `/api/engine/runs` | `{ runId, eventsUrl }` — 202 Accepted |
+| `GET` | `/api/engine/runs/:id` | Run status + step outputs |
+| `GET` | `/api/engine/runs/:id/events` | Server-Sent Events stream |
+| `POST` | `/api/engine/runs/:id/approve` | HITL approve → `completed` |
+| `POST` | `/api/engine/runs/:id/reject` | HITL reject → `cancelled` |
 
-## 🎨 Design System
-
-- **Theme:** Biotech dark with neon green/cyan accents, glassmorphic panels
-- **High-density layouts** designed for scientific workflows
-- All colors use **HSL semantic tokens** defined in `src/index.css` and `tailwind.config.ts`
-- Accessibility toggles for clinical vs technical terminology
+Frontend client: `src/lib/engine-api.ts` · Unified analysis entry: `src/lib/analyze-molecule.ts`
 
 ---
 
-## 📦 Project Structure
+## Routes map
+
+```mermaid
+flowchart TB
+  HOME["/ — Landing"]
+  HOME --> DISC[Discover]
+  DISC --> WS["/workspace ★"]
+  DISC --> SCR["/screening"]
+  DISC --> PRD["/predictions"]
+  DISC --> PIP["/pipeline"]
+
+  HOME --> MOD[Models — demo flagged]
+  MOD --> GAT["/gat"]
+  MOD --> XAI["/xai"]
+  MOD --> TRN["/training"]
+
+  HOME --> VAL[Validation]
+  VAL --> GRD["/grounding"]
+  VAL --> CMP["/compatibility"]
+  VAL --> BND["/binding"]
+  VAL --> VLD["/validation"]
+
+  HOME --> RES[Resources]
+  RES --> EDU["/education"]
+  RES --> CLS["/classroom"]
+  RES --> DAT["/datasets"]
+```
+
+| Route | Purpose | Data honesty |
+|-------|---------|--------------|
+| `/workspace` | **Primary researcher surface** — DMTA + scientific panel | PubChem + engine |
+| `/screening` | Batch SMILES screening | Engine-first via `analyzeMoleculeUnified` |
+| `/predictions` | Lipinski / Veber / ADMET scoring | Rule-based + PubChem |
+| `/pipeline` | 8-stage discovery timeline | Educational |
+| `/xai`, `/gat`, `/training` | Demos / simulators | **DemoBanner** — not production models |
+| `/login`, `/signup` | Auth | MongoDB backend |
+
+---
+
+## Project structure (where to edit what)
 
 ```
 .
+├── public/pawanax-logo.png      ← Pawanax AI brand mark
 ├── src/
-│   ├── components/      # UI, workspace, xai, predictions
-│   ├── pages/           # Route-level pages
-│   ├── lib/             # gat-predictor, validation, training-pipeline, pubchem
-│   ├── data/            # disease-models, education-content, targets
-│   ├── contexts/        # Auth, Subscription
-│   └── hooks/
-├── backend/
-│   ├── src/
-│   │   ├── engine/      # LangChain DMTA pipeline, model gateway, Neon schema
-│   │   ├── routes/      # molecules, predictions, auth, subscription
-│   │   ├── services/    # AIPredictionService, ExternalDataService
-│   │   └── models/      # Molecule, Prediction, User
-│   └── .env.example
-├── pnpm-workspace.yaml
-└── README.md
+│   ├── components/
+│   │   ├── BrandLogo.tsx        ← Vitalis product + Pawanax AI subline
+│   │   ├── workspace/           ← WorkspaceAnalyzer, EngineProgress, ScientificAssessmentPanel
+│   │   └── DemoBanner.tsx       ← Trust disclaimer for demo pages
+│   ├── lib/
+│   │   ├── analyze-molecule.ts  ← ★ Single analysis entry (engine → fallback)
+│   │   └── engine-api.ts        ← Engine REST + SSE client
+│   └── pages/                   ← Route-level views
+├── backend/src/engine/          ← ★ Pawanax-powered DMTA core
+│   ├── orchestrator/supervisor.js
+│   ├── analysis/scientific-assessment.js
+│   ├── tools/molmim-tool.js
+│   └── models/gateway.js
+├── ENGINE.md                    ← Honest implementation scorecard
+└── pnpm-workspace.yaml
+```
+
+**When you add a new analysis feature:** extend `backend/src/engine/analysis/` first, expose via `/api/engine/analyze`, then wire `analyze-molecule.ts` — not a new client-side pipeline.
+
+---
+
+## Scientific pipeline (deterministic vs AI)
+
+```mermaid
+flowchart TB
+  SMILES[Input SMILES] --> PC[PubChem lookup]
+  PC --> DESC[Molecular descriptors]
+  DESC --> RULES[Lipinski / Veber / BBB rules]
+  DESC --> SCI[QED · PAINS · hERG heuristics]
+  DESC --> ENG[Engagement proxy OR curated prior]
+
+  SCI --> OUT[ScientificAssessmentPanel]
+  ENG --> OUT
+
+  subgraph AI["Pawanax AI — clearly labeled"]
+    MOL[MolMIM analogs]
+    SAR[SAR narrative report]
+  end
+
+  OUT --> AI
+```
+
+Every score carries **source**, **confidence**, and **disclaimer** fields. The UI never implies experimental Ki/IC50 unless sourced from literature priors.
+
+---
+
+## Mobile-first UX
+
+The Vitalis workspace is designed **phone-up**:
+
+- **320px minimum** — hero type scales with `clamp()`, property grids collapse to 2 columns
+- **44px touch targets** — `.touch-target` on nav, buttons, analyzer controls
+- **Mobile nav** — backdrop overlay, body scroll lock, sign-in/sign-up in drawer
+- **Safe areas** — `.safe-top` / `.safe-bottom` for notched devices
+
+Test on real hardware: iPhone SE (375×667) and a 320px emulator.
+
+---
+
+## UI/UX scorecard (Genius-Artist audit)
+
+| Dimension | Score | Notes |
+|-----------|-------|-------|
+| Branding clarity | **8/10** | Vitalis = product, Pawanax = AI — now explicit |
+| Mobile experience | **7.5/10** | Touch targets, drawer auth; tables on Screening need scroll |
+| Navigation | **7.5/10** | 16 routes — consider Quick Start strip |
+| Workspace UX | **7.5/10** | Scientific panel + SSE progress |
+| Typography | **6.5/10** | Consider serif for assessment panels |
+| Trust / credibility | **8/10** | Honest badges, HITL, demo quarantine |
+
+**Overall: ~7.5/10** — research-ready; path to 9+ is nav simplification + responsive table audit.
+
+---
+
+## Testing
+
+```bash
+pnpm test                 # 21+ unit tests
+pnpm test:integration     # NVIDIA live (5 tests) — requires NVIDIA_API_KEY
+pnpm build                # Vite production bundle
+```
+
+```mermaid
+flowchart LR
+  T1[Vitest — frontend] --> OK1[engine-api · BrandLogo · analyze-molecule]
+  T2[Jest — backend] --> OK2[scientific · DMTA · HITL · API]
+  T3[Integration] --> OK3[MolMIM · Llama · PubChem live]
 ```
 
 ---
 
-## 🔐 Environment Variables
+## Deployment checklist
 
-Frontend uses Lovable Cloud auto-injected vars. Backend `.env`:
-```env
-GEMINI_API_KEY=your-key
-GEMINI_MODEL=gemini-2.5-flash
-MONGODB_URI=mongodb://localhost:27017/vitalis-ai
-PORT=5000
-FRONTEND_URL=http://localhost:8080
-```
+When you ship to production, verify each item:
 
----
-
-## 🌐 Live Demo
-
-👉 **[Launch Vitalis AI](https://mole-whisperer.lovable.app)**
-
-Try the workspace, run a prediction, explore SHAP explanations, or jump into Classroom mode.
+- [ ] `NVIDIA_API_KEY` set in host environment (Pawanax AI live)
+- [ ] `DATABASE_URL` → Neon Postgres (+ run `pnpm db:migrate`)
+- [ ] `REDIS_URL` for horizontal job workers
+- [ ] `JWT_SECRET` rotated from default
+- [ ] `CORS_ORIGIN` / `FRONTEND_URL` match deployed domain
+- [ ] `pnpm build` → serve `dist/` via CDN or static host
+- [ ] API on `:5000` or reverse-proxied at `/api`
 
 ---
 
-## 📄 License
+## Contributing (for the next engineer)
 
-MIT — see `LICENSE.md`
+You will succeed fastest if you internalize this order:
 
-## 🙌 Credits
-
-Built with [Lovable](https://lovable.dev) for the Vitalis AI Drug Discovery Hackathon 2026.
+1. **Read `ENGINE.md`** — honest gap list, no surprises
+2. **Run `pnpm dev` + open `/workspace`** — feel the DMTA loop
+3. **Trace one SMILES** from `WorkspaceAnalyzer` → `analyze-molecule.ts` → `/api/engine/analyze` → `molecule-analyzer.js`
+4. **Change science in `backend/src/engine/`** — not in deprecated client pipelines
+5. **Add tests** beside existing `backend/test/engine*.test.js` files
+6. **Keep branding**: Vitalis = engine, Pawanax = AI
 
 ---
 
-**Last Updated:** May 9, 2026 · **Version:** 2.0
+## License & credits
+
+- **License:** MIT — see `LICENSE.md`
+- **Engine:** Vitalis AI Drug Engine
+- **Intelligence:** Pawanax AI (NVIDIA NIM + LangChain)
+- **Hackathon origin:** Vitalis AI Drug Discovery Hackathon 2026
+
+---
+
+<p align="center">
+  <img src="public/pawanax-logo.png" alt="" width="32" />
+  <br />
+  <em>Vitalis AI Drug Engine · Powered by Pawanax AI</em>
+  <br />
+  <strong>Last updated:</strong> June 2026 · <strong>Version:</strong> 3.0.0
+</p>

@@ -48,7 +48,12 @@ export default function Signup() {
       <div className="container max-w-md mx-auto px-4 py-16">
         <Card>
           <CardHeader>
-            <CardTitle className="font-display">Create your account</CardTitle>
+            <CardTitle className="font-display text-balance">
+              Join Vitalis AI Drug Engine
+            </CardTitle>
+            <p className="text-xs font-mono text-muted-foreground mt-1">
+              Intelligence by Pawanax AI
+            </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
