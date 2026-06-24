@@ -4,6 +4,7 @@
 'use strict';
 
 const engineRoutes = require('./routes/engine');
+const chatRoutes = require('./routes/chat');
 const db = require('./db/client');
 const { initQueue } = require('./queue/job-queue');
 const { executeWorkflow } = require('./orchestrator/supervisor');
@@ -16,8 +17,9 @@ async function initEngine(app) {
   });
 
   app.use('/api/engine', engineRoutes);
+  app.use('/api/engine/chat', chatRoutes);
 
-  console.log('✓ Pawanax AI Engine initialized (LangChain + DMTA + MolMIM)');
+  console.log('✓ Vitalis Drug Engine + Pawanax Chat initialized');
 }
 
 module.exports = { initEngine };

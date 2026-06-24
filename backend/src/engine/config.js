@@ -25,7 +25,7 @@ const config = {
 
   engine: {
     requireAuth: process.env.ENGINE_REQUIRE_AUTH === 'true',
-    pipelineVersion: '3.0.0',
+    pipelineVersion: '3.1.0',
     defaultProvider: process.env.DEFAULT_MODEL_PROVIDER || 'nvidia',
   },
 };

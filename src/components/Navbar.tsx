@@ -13,6 +13,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Discover",
     items: [
+      { label: "Pawanax Chat", path: "/chat", desc: "Talk to the AI — no science degree needed" },
       { label: "Workspace", path: "/workspace", desc: "DMTA mission control" },
       { label: "Screening", path: "/screening", desc: "Batch compound screening" },
       { label: "Predictions", path: "/predictions", desc: "Success probability" },
@@ -162,7 +163,14 @@ const Navbar = () => {
             <span className="text-[10px] font-mono text-primary tracking-wider">RESEARCH READY</span>
           </div>
 
-          <Link to="/pricing" className="hidden sm:block">
+          <Link to="/chat" className="hidden sm:block">
+            <Button size="sm" className="h-9 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-display font-semibold gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Chat
+            </Button>
+          </Link>
+
+          <Link to="/pricing" className="hidden md:block">
             <Button size="sm" variant="outline" className="h-9 text-xs font-display">
               Pricing
             </Button>
@@ -179,6 +187,11 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="hidden sm:flex items-center gap-2">
+              <Link to="/chat">
+                <Button size="sm" variant="ghost" className="h-9 text-xs">
+                  Guest chat
+                </Button>
+              </Link>
               <Link to="/login">
                 <Button size="sm" variant="ghost" className="h-9 text-xs">
                   Sign in

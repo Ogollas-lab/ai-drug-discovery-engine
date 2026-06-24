@@ -13,7 +13,7 @@ describe('Engine API', () => {
     const res = await request(app).get('/api/engine/health');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.engine).toBe('3.0.0');
+    expect(res.body.engine).toBe('3.1.0');
   });
 
   test('POST /api/engine/analyze aspirin', async () => {

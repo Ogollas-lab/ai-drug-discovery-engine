@@ -1,73 +1,56 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getGoogleSignInUrl } from "@/pages/AuthCallback";
+import BrandLogo from "@/components/BrandLogo";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginAsGuest } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const { data } = await apiClient.post("/api/auth/login", { email, password });
-      const token = data.tokens?.authToken;
-      if (!token) throw new Error("No token returned");
-      login(token, {
-        id: data.data.userId,
-        name: `${data.data.firstName} ${data.data.lastName}`,
-        email: data.data.email,
-        role: data.data.tier || "free",
-      });
-      navigate("/workspace");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
-    }
-    setLoading(false);
+  const continueAsGuest = () => {
+    loginAsGuest();
+    navigate("/chat");
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container max-w-md mx-auto px-4 py-16">
-        <Card>
-          <CardHeader>
+        <div className="flex justify-center mb-8">
+          <BrandLogo size="lg" />
+        </div>
+        <Card className="glass-panel border-border/60">
+          <CardHeader className="text-center">
             <CardTitle className="font-display text-balance">
               Sign in to Vitalis AI Drug Engine
             </CardTitle>
             <p className="text-xs font-mono text-muted-foreground mt-1">
-              Powered by Pawanax AI
+              Powered by Pawanax AI · Neon Auth
             </p>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              </div>
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in…" : "Sign in"}
-              </Button>
-            </form>
-            <p className="text-sm text-muted-foreground mt-4 text-center">
-              No account? <Link to="/signup" className="text-primary hover:underline">Sign up</Link>
+          <CardContent className="space-y-3">
+            <Button
+              className="w-full h-11 bg-primary text-primary-foreground font-display gap-2"
+              onClick={() => { window.location.href = getGoogleSignInUrl(); }}
+            >
+              Continue with Google
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-11 font-display"
+              onClick={continueAsGuest}
+            >
+              Continue as guest → Chat
+            </Button>
+            <p className="text-[10px] text-center text-muted-foreground font-mono pt-2">
+              Guest mode gives full chat access. Sign in saves your session.
             </p>
+            <Link to="/chat" className="block text-center text-xs text-primary hover:underline">
+              Skip to Pawanax Chat →
+            </Link>
           </CardContent>
         </Card>
       </div>
