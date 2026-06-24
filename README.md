@@ -505,7 +505,7 @@ You will succeed fastest if you internalize this order:
 
 ## License & credits
 
-- **License:** MIT — see `LICENSE.md`
+- **License:** Apache 2.0
 - **Engine:** Vitalis AI Drug Engine
 - **Intelligence:** Pawanax AI (NVIDIA NIM + LangChain)
 - **Hackathon origin:** Vitalis AI Drug Discovery Hackathon 2026
