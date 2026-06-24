@@ -28,6 +28,7 @@ import {
   type XAIPrediction
 } from "@/data/xai-molecules";
 import { runXAIAnalysis, type XAIAnalysisResult } from "@/lib/xai-pipeline";
+import DemoBanner from "@/components/DemoBanner";
 
 const XAIDashboard = () => {
   const [query, setQuery] = useState("");
@@ -203,11 +204,15 @@ const XAIDashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-display font-bold">Explainable AI Dashboard</h1>
-                <p className="text-xs text-muted-foreground">Transparent, interpretable predictions — SHAP & LIME analysis</p>
+                <p className="text-xs text-muted-foreground">Preset molecules use demonstration SHAP data. Custom SMILES uses the analysis pipeline.</p>
               </div>
             </div>
             <ExportButton prediction={prediction} />
           </div>
+
+          <DemoBanner
+            message="Curated examples (aspirin, imatinib, etc.) display pre-authored demonstration SHAP/LIME data — not computed from a trained model. For validated descriptors, use /workspace with the Engine API."
+          />
 
           {/* Search / SMILES Input */}
           <div className="mt-4 max-w-xl">

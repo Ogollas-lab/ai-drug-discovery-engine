@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Atom, Zap, Brain, RotateCcw } from "lucide-react";
+import { Microscope, Zap, Shield, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { resetOnboarding } from "@/components/OnboardingTour";
@@ -8,59 +8,53 @@ import heroBg from "@/assets/hero-bg.jpg";
 const HeroSection = () => {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-16">
-      {/* Background image */}
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-30" />
-        <div className="absolute inset-0 bg-background/70" />
+        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-25" />
+        <div className="absolute inset-0 bg-background/75" />
         <div className="absolute inset-0 gradient-mesh" />
       </div>
 
-      {/* Grid overlay */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 opacity-[0.04]"
         style={{
-          backgroundImage: `linear-gradient(hsl(160 100% 45% / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(160 100% 45% / 0.3) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(hsl(357 78% 52% / 0.35) 1px, transparent 1px), linear-gradient(90deg, hsl(357 78% 52% / 0.35) 1px, transparent 1px)`,
           backgroundSize: "60px 60px",
         }}
       />
 
       <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-        {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-8"
+          className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 mb-8"
         >
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse-slow" />
-          <span className="text-sm font-mono text-primary tracking-wider uppercase">Production Ready</span>
+          <img src="/pawanax-logo.png" alt="" className="w-6 h-6 rounded-full" />
+          <span className="text-sm font-mono text-primary tracking-wider uppercase">Research Platform</span>
         </motion.div>
 
-        {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
           className="font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6"
         >
-          <span className="text-foreground">In-Silico</span>
+          <span className="text-foreground">Accelerate</span>
           <br />
           <span className="text-primary glow-text">Drug Discovery</span>
           <br />
-          <span className="text-foreground">Engine</span>
+          <span className="text-foreground text-4xl md:text-5xl lg:text-6xl">with Pawanax AI</span>
         </motion.h1>
 
-        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
         >
-          Explore how molecules bind, behave, and break down — before they reach the patient.
+          Multi-agent DMTA workflows powered by PubChem-validated descriptors, NVIDIA BioNeMo, and human-in-the-loop safety — built for researchers who need honest science.
         </motion.p>
 
-        {/* CTAs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -74,7 +68,7 @@ const HeroSection = () => {
           </Link>
           <Link to="/education">
             <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 px-6 py-5 text-sm font-display font-semibold">
-              Try Education Mode
+              Education Mode
             </Button>
           </Link>
           <Button
@@ -89,7 +83,6 @@ const HeroSection = () => {
           </Button>
         </motion.div>
 
-        {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,9 +90,9 @@ const HeroSection = () => {
           className="flex flex-wrap justify-center gap-8 md:gap-16 mb-16"
         >
           {[
-            { icon: Atom, label: "GCN / GAT / VAE", desc: "Neural Architectures" },
-            { icon: Zap, label: "0.71 RMSE", desc: "GAT on ESOL" },
-            { icon: Brain, label: "Explainable AI", desc: "Attention Visualization" },
+            { icon: Microscope, label: "PubChem + QED", desc: "Validated descriptors" },
+            { icon: Zap, label: "NVIDIA MolMIM", desc: "Lead optimization" },
+            { icon: Shield, label: "HITL Safety", desc: "Human review gates" },
           ].map((stat, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -114,7 +107,6 @@ const HeroSection = () => {
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

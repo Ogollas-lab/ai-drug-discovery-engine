@@ -57,9 +57,12 @@ Traditional drug discovery takes 10+ years and billions of dollars in offshore l
 
 ### Backend
 - **Node.js** + **Express.js**
-- **MongoDB** (Mongoose)
-- **Google Gemini 2.5 Flash** for AI reasoning
-- **JWT Authentication** + **Stripe Subscriptions**
+- **LangChain** + **LangGraph** — multi-agent DMTA orchestration
+- **Neon Postgres** (optional) — runs, provenance, predictions
+- **BullMQ** + **Redis** (optional) — async job queue
+- **NVIDIA NIM** / **DeepSeek-class** reasoner via model gateway
+- **MongoDB** (legacy auth/subscription)
+- **Google Gemini** — fallback reasoning
 
 ### Data Sources
 - **PubChem REST API** — physicochemical properties (real, experimental)
@@ -75,21 +78,26 @@ Traditional drug discovery takes 10+ years and billions of dollars in offshore l
 - npm or bun
 - MongoDB (only required if running the backend locally)
 
-### 1. Frontend (live preview)
+### 1. Frontend + Backend (recommended)
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
-Vite dev server runs at `http://localhost:8080`.
+- Web: `http://localhost:8080`
+- API + Engine: `http://localhost:5000`
 
-### 2. Backend (optional, for full-stack features)
+### 2. Frontend only
 ```bash
-cd backend
-npm install
-cp .env.example .env   # add GEMINI_API_KEY, MONGODB_URI, etc.
-npm run dev
+pnpm install
+pnpm dev:web
 ```
-Backend runs at `http://localhost:5000`.
+
+### 3. Backend only
+```bash
+pnpm install
+pnpm dev:api
+```
+Copy `backend/.env.example` → `backend/.env` and set keys (NVIDIA, Neon, etc.).
 
 See [`backend/README.md`](./backend/README.md) and [`backend/API_DOCUMENTATION.md`](./backend/API_DOCUMENTATION.md) for full API reference.
 
@@ -137,10 +145,12 @@ See [`backend/README.md`](./backend/README.md) and [`backend/API_DOCUMENTATION.m
 │   └── hooks/
 ├── backend/
 │   ├── src/
-│   │   ├── routes/      # molecules, predictions, simulations, auth, subscription
+│   │   ├── engine/      # LangChain DMTA pipeline, model gateway, Neon schema
+│   │   ├── routes/      # molecules, predictions, auth, subscription
 │   │   ├── services/    # AIPredictionService, ExternalDataService
-│   │   └── models/      # Molecule, Prediction, Simulation, User
-│   └── API_DOCUMENTATION.md
+│   │   └── models/      # Molecule, Prediction, User
+│   └── .env.example
+├── pnpm-workspace.yaml
 └── README.md
 ```
 

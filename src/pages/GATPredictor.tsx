@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Network, AlertTriangle, Sigma } from "lucide-react";
 import { runGATPrediction, type GATPredictionOutput } from "@/lib/gat-predictor";
+import DemoBanner from "@/components/DemoBanner";
 import {
   ResponsiveContainer,
   BarChart,
@@ -73,6 +74,9 @@ const GATPredictor = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="max-w-[1400px] mx-auto px-6 pt-20 pb-16">
+        <DemoBanner
+          message="This page uses a browser-side heuristic stand-in — NOT a trained Graph Attention Network. Use /workspace with the Engine API for server-validated analysis."
+        />
         <header className="mb-6">
           <div className="flex items-center gap-2 text-xs font-mono text-primary mb-2">
             <Network className="w-3.5 h-3.5" />

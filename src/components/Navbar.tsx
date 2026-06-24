@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Atom, Menu, X, ChevronDown, Sparkles } from "lucide-react";
+import { Menu, X, ChevronDown, Sparkles } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import BrandLogo from "@/components/BrandLogo";
 
 type NavItem = { label: string; path: string; desc?: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -11,18 +13,18 @@ const navGroups: NavGroup[] = [
   {
     label: "Discover",
     items: [
-      { label: "Workspace", path: "/workspace", desc: "Mission control dashboard" },
+      { label: "Workspace", path: "/workspace", desc: "DMTA mission control" },
       { label: "Screening", path: "/screening", desc: "Batch compound screening" },
-      { label: "Predictions", path: "/predictions", desc: "Drug success prediction" },
+      { label: "Predictions", path: "/predictions", desc: "Success probability" },
       { label: "Pipeline", path: "/pipeline", desc: "8-stage discovery timeline" },
     ],
   },
   {
     label: "Models",
     items: [
-      { label: "GAT Predictor", path: "/gat", desc: "Graph attention network" },
-      { label: "XAI", path: "/xai", desc: "Explainable AI dashboard" },
-      { label: "Training", path: "/training", desc: "Model training pipeline" },
+      { label: "GAT Predictor", path: "/gat", desc: "Graph attention (demo)" },
+      { label: "XAI", path: "/xai", desc: "Explainability (demo)" },
+      { label: "Training", path: "/training", desc: "Training simulator" },
       { label: "Benchmarks", path: "/benchmarks", desc: "Model performance" },
     ],
   },
@@ -48,6 +50,7 @@ const navGroups: NavGroup[] = [
 
 const Navbar = () => {
   const location = useLocation();
+  const { isAuthenticated, user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -76,19 +79,7 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-[1400px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="relative w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/30 flex items-center justify-center overflow-hidden">
-            <Atom className="w-5 h-5 text-primary relative z-10 group-hover:rotate-90 transition-transform duration-500" />
-            <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors" />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="font-display font-bold text-sm tracking-tight">ISDE</span>
-            <span className="text-[9px] font-mono text-primary/70 tracking-widest uppercase">
-              Drug Discovery
-            </span>
-          </div>
-        </Link>
+        <BrandLogo size="md" />
 
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-1">
@@ -161,20 +152,47 @@ const Navbar = () => {
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full border border-primary/20 bg-primary/5">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse-slow" />
-            <span className="text-[10px] font-mono text-primary tracking-wider">v2.0 LIVE</span>
+            <span className="text-[10px] font-mono text-primary tracking-wider">RESEARCH READY</span>
           </div>
 
           <Link to="/pricing" className="hidden sm:block">
             <Button
               size="sm"
-              className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-display font-semibold gap-1.5 glow-primary"
+              variant="outline"
+              className="h-8 text-xs font-display"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              Upgrade
+              Pricing
             </Button>
           </Link>
 
-          {/* Mobile toggle */}
+          {isAuthenticated ? (
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-[10px] font-mono text-muted-foreground max-w-[100px] truncate">
+                {user?.name}
+              </span>
+              <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={logout}>
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link to="/login">
+                <Button size="sm" variant="ghost" className="h-8 text-xs">
+                  Sign in
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button
+                  size="sm"
+                  className="h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-display font-semibold gap-1.5"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Sign up
+                </Button>
+              </Link>
+            </div>
+          )}
+
           <button
             className="lg:hidden p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -185,7 +203,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div

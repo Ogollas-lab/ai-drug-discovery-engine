@@ -14,6 +14,7 @@ const subscriptionRoutes = require('./routes/subscription');
 const classroomRoutes = require('./routes/classroom');
 const webhookRoutes = require('./routes/webhooks');
 const adminRoutes = require('./routes/admin');
+const { initEngine } = require('./engine');
 
 // Middleware
 const {
@@ -28,7 +29,7 @@ const app = express();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || 'http://localhost:8080',
   credentials: true
 }));
 
@@ -59,21 +60,23 @@ if (mongoUri.includes('mongodb+srv://')) {
   mongoOptions.tlsInsecure = process.env.NODE_ENV !== 'production';
 }
 
-mongoose.connect(mongoUri, mongoOptions)
-  .then(() => console.log('✓ MongoDB connected'))
-  .catch(err => {
-    console.error('✗ MongoDB connection error:', err.message);
-    // Continue running even if MongoDB fails for development
-    console.log('⚠️  Running in offline mode - some features may not work');
-    console.log('💡 Tip: Install local MongoDB or check MongoDB Atlas connection string');
-  });
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(mongoUri, mongoOptions)
+    .then(() => console.log('✓ MongoDB connected'))
+    .catch(err => {
+      console.error('✗ MongoDB connection error:', err.message);
+      console.log('⚠️  Running in offline mode - some features may not work');
+      console.log('💡 Tip: Install local MongoDB or check MongoDB Atlas connection string');
+    });
+}
 
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    engine: 'v3.0.0',
   });
 });
 
@@ -99,16 +102,7 @@ app.use('/api/pubchem', authenticateToken, pubchemRoutes);
 app.use('/api/simulations', authenticateToken, enforceActionLimit('simulation'), simulationRoutes);
 app.use('/api/classroom', authenticateToken, classroomRoutes);
 
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    path: req.path
-  });
-});
-
-// Error Handler
+// Error Handler (404 registered after async engine init in startServer)
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(err.status || 500).json({
@@ -119,10 +113,42 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Vitalis AI Backend running on http://localhost:${PORT}`);
-  console.log(`📊 API Documentation: http://localhost:${PORT}/api/docs`);
-  console.log(`🔍 Health Check: http://localhost:${PORT}/api/health\n`);
-});
+
+async function startServer() {
+  try {
+    await initEngine(app);
+  } catch (err) {
+    console.error('Engine init failed:', err.message);
+  }
+
+  if (!app._engine404Mounted) {
+    app.use((req, res) => {
+      res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.path
+      });
+    });
+    app._engine404Mounted = true;
+  }
+
+  if (process.env.NODE_ENV === 'test') {
+    return app;
+  }
+
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Vitalis AI Backend running on http://localhost:${PORT}`);
+    console.log(`📊 API Documentation: http://localhost:${PORT}/api/docs`);
+    console.log(`🔍 Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`🧬 Engine API: http://localhost:${PORT}/api/engine/health\n`);
+  });
+
+  return app;
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 module.exports = app;
+module.exports.startServer = startServer;

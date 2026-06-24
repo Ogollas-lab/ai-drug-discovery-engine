@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu, AlertCircle } from "lucide-react";
+import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SAMPLE_MOLECULES, generateMoleculeResultReal, type MoleculeResult, type TargetInfo } from "@/data/targets";
+import { SAMPLE_MOLECULES, type MoleculeResult, type TargetInfo } from "@/data/targets";
+import { analyzeMoleculeUnified, type UnifiedAnalysisResult } from "@/lib/analyze-molecule";
+import { startEngineRun } from "@/lib/engine-api";
 import ConceptTooltip from "@/components/ConceptTooltip";
 import AIReasoningPanel from "./AIReasoningPanel";
+import EngineProgress from "./EngineProgress";
+import ScientificAssessmentPanel from "./ScientificAssessmentPanel";
 
 interface WorkspaceAnalyzerProps {
   selectedTarget: TargetInfo | null;
@@ -19,23 +23,46 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
   const [analyzing, setAnalyzing] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [engineRunId, setEngineRunId] = useState<string | null>(null);
+  const [engineReport, setEngineReport] = useState<string | null>(null);
+  const [engineScientific, setEngineScientific] = useState<UnifiedAnalysisResult["scientific"]>(undefined);
+  const [useEngine, setUseEngine] = useState(true);
 
   const analyze = async () => {
     setAnalyzing(true);
     setResult(null);
     setError(null);
+    setEngineRunId(null);
+    setEngineReport(null);
+    setEngineScientific(undefined);
     onResult(null);
     try {
-      const res = await generateMoleculeResultReal(smiles);
-      if (!res) {
+      if (useEngine) {
+        const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name);
+        if (unified.molecule) {
+          setResult(unified.molecule);
+          onResult(unified.molecule);
+          setEngineScientific(unified.scientific);
+          onSmilesChange?.(smiles, unified.molecule.name);
+
+          const run = await startEngineRun(smiles, selectedTarget?.name);
+          setEngineRunId(run.runId);
+          setAnalyzing(false);
+          return;
+        }
+      }
+
+      const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name);
+      if (!unified.molecule) {
         setError(`"${smiles.slice(0, 40)}" could not be resolved. Check your SMILES string or try a compound name like "Aspirin".`);
       } else {
-        setResult(res);
-        onResult(res);
-        onSmilesChange?.(smiles, res.name);
+        setResult(unified.molecule);
+        onResult(unified.molecule);
+        setEngineScientific(unified.scientific);
+        onSmilesChange?.(smiles, unified.molecule.name);
       }
     } catch {
-      setError("Network error fetching from PubChem. Check your connection and try again.");
+      setError("Network error. Ensure backend is running at localhost:5000 or try again.");
     }
     setAnalyzing(false);
   };
@@ -60,6 +87,14 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
               </span>
             )}
           </div>
+          <button
+            onClick={() => setUseEngine(!useEngine)}
+            className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors mr-3"
+            title="Use LangChain engine API when backend is available"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${useEngine ? "text-primary" : ""}`} />
+            {useEngine ? "Engine" : "Local"}
+          </button>
           <button
             onClick={() => setExpertMode(!expertMode)}
             className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors"
@@ -142,6 +177,21 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
 
           {result && !analyzing && (
             <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+              {engineRunId && (
+                <EngineProgress
+                  runId={engineRunId}
+                  onComplete={(event) => {
+                    const out = event.output as { report?: { narrative?: string } } | undefined;
+                    if (out?.report?.narrative) setEngineReport(out.report.narrative);
+                  }}
+                />
+              )}
+              {engineReport && (
+                <div className="rounded-lg border border-border bg-secondary/30 p-3">
+                  <p className="text-[10px] font-mono text-primary mb-2">Agent SAR Report</p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{engineReport}</p>
+                </div>
+              )}
               {/* Name & Status */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -175,6 +225,9 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
                 {result.dataSource === "pubchem" ? <Database className="w-3 h-3" /> : <Cpu className="w-3 h-3" />}
                 {result.dataSource === "pubchem" ? "Real data · PubChem" : "Predicted · Model"}
               </div>
+
+              {/* Scientific assessment */}
+              <ScientificAssessmentPanel result={result} engineScientific={engineScientific} />
 
               {/* GNN Target Engagement Score */}
               <div className="glass-panel rounded-xl p-4 glow-border space-y-2">

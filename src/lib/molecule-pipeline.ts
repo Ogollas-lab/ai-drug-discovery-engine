@@ -1,5 +1,6 @@
 /**
- * MOLECULE ANALYSIS PIPELINE — Production-Grade Architecture
+ * @deprecated Prefer src/lib/analyze-molecule.ts → backend /api/engine/analyze
+ * MOLECULE ANALYSIS PIPELINE — legacy client-side pipeline (RDKit not installed).
  * 
  * CRITICAL GUARANTEES:
  * 1. SMILES is source of truth (RDKit parsing required)
