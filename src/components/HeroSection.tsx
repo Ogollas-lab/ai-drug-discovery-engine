@@ -3,14 +3,13 @@ import { Atom, Zap, Brain, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { resetOnboarding } from "@/components/OnboardingTour";
-import heroBg from "@/assets/hero-bg.jpg";
+
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-16">
-      {/* Background image */}
+      {/* Background */}
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-background/70" />
         <div className="absolute inset-0 gradient-mesh" />
       </div>
