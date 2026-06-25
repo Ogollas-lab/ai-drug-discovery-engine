@@ -68,7 +68,7 @@ class AuditLogger {
 // STATELESS ANALYSIS PIPELINE
 // ============================================================================
 
-export async function analyzeM oleculeStrict(inputSMILES: string): Promise<MoleculeAnalysis | null> {
+export async function analyzeMoleculeStrict(inputSMILES: string): Promise<MoleculeAnalysis | null> {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const timestamp = Date.now();
   const audit = new AuditLogger();
