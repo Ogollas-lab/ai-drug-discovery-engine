@@ -106,7 +106,7 @@ const Screening = () => {
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <Link to="/">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" aria-label="Back to home" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>

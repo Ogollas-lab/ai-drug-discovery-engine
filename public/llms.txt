@@ -1,0 +1,24 @@
+# Vitalis AI
+
+> AI-powered, in-silico drug discovery platform for African researchers, educators, and students. Predicts molecular binding, screens compound libraries, and explains model decisions for neglected tropical diseases.
+
+## Pages
+
+- [Home](/): Platform overview, mission, and pipeline.
+- [Workspace](/workspace): Mission-control clinical dashboard.
+- [Compound Screening](/screening): Batch virtual screening against protein targets.
+- [Drug Success Predictions](/predictions): Lipinski, Veber, and ADMET evaluation.
+- [Discovery Pipeline](/pipeline): 8-stage drug discovery timeline with attrition funnel.
+- [Explainability (XAI)](/xai): SHAP, LIME, decision pathways, and confidence panels.
+- [Grounding](/grounding): Evidence grounding for model predictions.
+- [Compatibility](/compatibility): Off-target and safety compatibility checks.
+- [Binding Realism](/binding): Physically realistic binding affinity analysis.
+- [Datasets](/datasets): BindingDB, PDB, PubChem, and ChEMBL ingestion.
+- [GAT Predictor](/gat): Graph Attention Network binding predictor.
+- [Validation](/validation): Cross-checks AI predictions against experimental evidence.
+- [Training Pipeline](/training): Batch training across African and NTD priority diseases.
+- [Governance](/governance): Dataset licensing, provenance, and compliance.
+- [Benchmarks](/benchmarks): Transparent GAT/GCN model performance metrics.
+- [Classroom Mode](/classroom): Instructor-led collaborative sessions.
+- [Education Hub](/education): Learning paths and virtual lab.
+- [Pricing](/pricing): Subscription tiers — Student, Pro Researcher, Enterprise.
