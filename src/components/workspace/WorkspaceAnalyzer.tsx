@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu, AlertCircle } from "lucide-react";
+import { Search, Activity, CheckCircle, XCircle, FlaskConical, Beaker, ToggleLeft, ToggleRight, Database, Cpu, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SAMPLE_MOLECULES, generateMoleculeResultReal, type MoleculeResult, type TargetInfo } from "@/data/targets";
+import { SAMPLE_MOLECULES, type MoleculeResult, type TargetInfo } from "@/data/targets";
+import { analyzeMoleculeUnified, type UnifiedAnalysisResult } from "@/lib/analyze-molecule";
+import { startEngineRun } from "@/lib/engine-api";
 import ConceptTooltip from "@/components/ConceptTooltip";
 import AIReasoningPanel from "./AIReasoningPanel";
+import EngineProgress from "./EngineProgress";
+import ScientificAssessmentPanel from "./ScientificAssessmentPanel";
 
 interface WorkspaceAnalyzerProps {
   selectedTarget: TargetInfo | null;
@@ -19,23 +23,46 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
   const [analyzing, setAnalyzing] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [engineRunId, setEngineRunId] = useState<string | null>(null);
+  const [engineReport, setEngineReport] = useState<string | null>(null);
+  const [engineScientific, setEngineScientific] = useState<UnifiedAnalysisResult["scientific"]>(undefined);
+  const [useEngine, setUseEngine] = useState(true);
 
   const analyze = async () => {
     setAnalyzing(true);
     setResult(null);
     setError(null);
+    setEngineRunId(null);
+    setEngineReport(null);
+    setEngineScientific(undefined);
     onResult(null);
     try {
-      const res = await generateMoleculeResultReal(smiles);
-      if (!res) {
+      if (useEngine) {
+        const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name);
+        if (unified.molecule) {
+          setResult(unified.molecule);
+          onResult(unified.molecule);
+          setEngineScientific(unified.scientific);
+          onSmilesChange?.(smiles, unified.molecule.name);
+
+          const run = await startEngineRun(smiles, selectedTarget?.name);
+          setEngineRunId(run.runId);
+          setAnalyzing(false);
+          return;
+        }
+      }
+
+      const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name);
+      if (!unified.molecule) {
         setError(`"${smiles.slice(0, 40)}" could not be resolved. Check your SMILES string or try a compound name like "Aspirin".`);
       } else {
-        setResult(res);
-        onResult(res);
-        onSmilesChange?.(smiles, res.name);
+        setResult(unified.molecule);
+        onResult(unified.molecule);
+        setEngineScientific(unified.scientific);
+        onSmilesChange?.(smiles, unified.molecule.name);
       }
     } catch {
-      setError("Network error fetching from PubChem. Check your connection and try again.");
+      setError("Network error. Ensure backend is running at localhost:5000 or try again.");
     }
     setAnalyzing(false);
   };
@@ -49,24 +76,38 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
   return (
     <div className="h-full flex flex-col overflow-y-auto">
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Beaker className="w-4 h-4 text-primary" />
-            <h2 className="font-display text-sm font-semibold">Molecule Analyzer</h2>
+      <div className="p-3 sm:p-4 border-b border-border">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Beaker className="w-4 h-4 text-primary shrink-0" />
+            <h2 className="font-display text-sm font-semibold truncate">Molecule Analyzer</h2>
             {selectedTarget && (
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-primary/10 text-primary border border-primary/20">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-primary/10 text-primary border border-primary/20 shrink-0">
                 {selectedTarget.gene}
               </span>
             )}
           </div>
-          <button
-            onClick={() => setExpertMode(!expertMode)}
-            className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {expertMode ? <ToggleRight className="w-4 h-4 text-primary" /> : <ToggleLeft className="w-4 h-4" />}
-            {expertMode ? "Expert" : "Student"}
-          </button>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button
+              onClick={() => setUseEngine(!useEngine)}
+              className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-2 min-h-[44px] rounded-md"
+              title="Use LangChain engine API when backend is available"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${useEngine ? "text-primary" : ""}`} />
+              {useEngine ? "Engine" : "Local"}
+            </button>
+            <button
+              onClick={() => setExpertMode(!expertMode)}
+              className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-2 min-h-[44px] rounded-md"
+            >
+              {expertMode ? (
+                <ToggleRight className="w-4 h-4 text-primary" />
+              ) : (
+                <ToggleLeft className="w-4 h-4" />
+              )}
+              {expertMode ? "Expert" : "Student"}
+            </button>
+          </div>
         </div>
 
         {/* Sample molecules */}
@@ -92,7 +133,7 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
             <button
               key={s}
               onClick={() => loadSample(s)}
-              className="px-2 py-1 rounded text-[10px] font-mono bg-secondary text-secondary-foreground hover:bg-primary/10 hover:text-primary transition-colors border border-border"
+              className="px-2.5 py-2 min-h-[36px] rounded text-[10px] font-mono bg-secondary text-secondary-foreground hover:bg-primary/10 hover:text-primary active:bg-primary/15 transition-colors border border-border"
             >
               {name}
             </button>
@@ -100,18 +141,18 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
         </div>
 
         {/* Input */}
-        <div className="flex gap-2">
+        <div className="flex flex-col xs:flex-row gap-2">
           <Input
             value={smiles}
             onChange={(e) => setSmiles(e.target.value)}
             placeholder="Enter SMILES string..."
-            className="font-mono text-xs bg-background border-border"
+            className="font-mono text-xs bg-background border-border min-h-[44px]"
           />
           <Button
             onClick={analyze}
             disabled={!smiles || analyzing}
             size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 gap-1.5"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 gap-1.5 min-h-[44px] w-full xs:w-auto"
           >
             {analyzing ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
             Analyze
@@ -142,6 +183,21 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
 
           {result && !analyzing && (
             <motion.div key="result" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+              {engineRunId && (
+                <EngineProgress
+                  runId={engineRunId}
+                  onComplete={(event) => {
+                    const out = event.output as { report?: { narrative?: string } } | undefined;
+                    if (out?.report?.narrative) setEngineReport(out.report.narrative);
+                  }}
+                />
+              )}
+              {engineReport && (
+                <div className="rounded-lg border border-border bg-secondary/30 p-3">
+                  <p className="text-[10px] font-mono text-primary mb-2">Agent SAR Report</p>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{engineReport}</p>
+                </div>
+              )}
               {/* Name & Status */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -175,6 +231,9 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
                 {result.dataSource === "pubchem" ? <Database className="w-3 h-3" /> : <Cpu className="w-3 h-3" />}
                 {result.dataSource === "pubchem" ? "Real data · PubChem" : "Predicted · Model"}
               </div>
+
+              {/* Scientific assessment */}
+              <ScientificAssessmentPanel result={result} engineScientific={engineScientific} />
 
               {/* GNN Target Engagement Score */}
               <div className="glass-panel rounded-xl p-4 glow-border space-y-2">
@@ -215,7 +274,7 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
                 <div className="text-xs font-display font-semibold flex items-center gap-2">
                   <ConceptTooltip conceptKey="lipinski">Lipinski & Properties</ConceptTooltip>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 xs:grid-cols-3 gap-2">
                   {[
                     { label: "MW", value: result.mw, unit: "g/mol", key: "" },
                     { label: "LogP", value: result.logp, unit: "", key: "logp" },

@@ -455,7 +455,7 @@ function buildResult(
   const cyp3a4ScoreNum = offTargets.find(o => o.target === "CYP3A4")?.score ?? 0;
 
   const xaiReasoning =
-    `${name} has a ${scoreLabel} GNN target engagement score (${gnnEngagementScore.toFixed(2)} — predicted, not experimental). ` +
+    `${name} has a ${scoreLabel} heuristic engagement proxy (${gnnEngagementScore.toFixed(2)} — NOT a trained GNN, not experimental). ` +
     `Scaffold class: ${scaffold.scaffoldClass} (${scaffold.confidence} confidence). ` +
     `Physicochemical profile: ${logpNote}, ${tpsaNote}, MW ${mw.toFixed(1)} Da, ` +
     `${hDonors} H-bond donor${hDonors !== 1 ? "s" : ""}, ${hAcceptors} acceptor${hAcceptors !== 1 ? "s" : ""}, ` +
@@ -470,8 +470,8 @@ function buildResult(
     drugClass: known?.drugClass || "Unknown",
     tags: known?.tags || [],
     gnnEngagementScore,
-    engagementScoreLabel: "GNN Target Engagement Score",
-    engagementScoreProvenance: "Heuristic GNN · normalised 0–1 · not a Ki, IC50, Kd, or ΔG",
+    engagementScoreLabel: "Heuristic Target Engagement Proxy",
+    engagementScoreProvenance: "Heuristic proxy · NOT a trained GNN · not Ki, IC50, Kd, or ΔG · requires experimental validation",
     mw,
     logp: logpVal,
     hDonors,
@@ -549,8 +549,8 @@ export function generateMoleculeResult(smiles: string): MoleculeResult {
     drugClass: known?.drugClass || "Unknown",
     tags: known?.tags || [],
     gnnEngagementScore,
-    engagementScoreLabel: "GNN Target Engagement Score",
-    engagementScoreProvenance: "Heuristic GNN · normalised 0–1 · not a Ki, IC50, Kd, or ΔG",
+    engagementScoreLabel: "Heuristic Target Engagement Proxy",
+    engagementScoreProvenance: "Heuristic proxy · NOT a trained GNN · not Ki, IC50, Kd, or ΔG · requires experimental validation",
     mw,
     logp,
     hDonors,

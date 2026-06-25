@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Database, Cpu, GitBranch, Beaker, CheckCircle2, AlertTriangle, Play, Layers, ShieldCheck } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import DemoBanner from "@/components/DemoBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -103,6 +104,10 @@ export default function Training() {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <main className="max-w-[1400px] mx-auto px-6 pt-24 pb-16 space-y-8">
+        <DemoBanner
+          variant="simulator"
+          message="This is a browser-side training simulator that calibrates heuristics in localStorage — NOT a real GPU training pipeline. Production training requires a dedicated ML worker and dataset registry."
+        />
         <motion.header
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

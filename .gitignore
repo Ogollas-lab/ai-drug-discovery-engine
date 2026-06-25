@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 package-lock.json
 yarn.lock
 bun.lockb
@@ -8,9 +9,6 @@ bun.lockb
 .env
 .env.local
 .env.*.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # IDE & Editor
 .vscode/
@@ -19,7 +17,6 @@ bun.lockb
 *.swo
 *~
 .DS_Store
-.env.example
 *.sublime-project
 *.sublime-workspace
 

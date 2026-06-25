@@ -25,30 +25,43 @@ const Workspace = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-16 pb-8 px-4">
+      <div className="pt-14 sm:pt-16 pb-8 px-3 sm:px-4 safe-bottom">
         <div className="max-w-[1600px] mx-auto">
           {/* Experiment header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <h1 className="font-display text-xl font-bold">Workspace</h1>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 className="font-display text-lg sm:text-xl font-bold w-full xs:w-auto">
+                Vitalis Workspace
+              </h1>
               {selectedTarget && (
-                <span className="px-2.5 py-1 rounded-md text-xs font-mono bg-primary/10 text-primary border border-primary/20">
+                <span className="px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-mono bg-primary/10 text-primary border border-primary/20">
                   {selectedTarget.tags[0]} · {selectedTarget.gene}
                 </span>
               )}
-              <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${analysisResult ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"}`}>
+              <span
+                className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                  analysisResult
+                    ? "bg-primary/20 text-primary"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
                 {analysisResult ? "Completed" : selectedTarget ? "Running" : "Idle"}
               </span>
               {analysisResult && (
-                <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
-                  analysisResult.dataSource === "pubchem"
-                    ? "bg-primary/10 text-primary border-primary/20"
-                    : "bg-secondary text-muted-foreground border-border"
-                }`}>
-                  {analysisResult.dataSource === "pubchem" ? "📡 Live Data" : "🧮 Predicted"}
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+                    analysisResult.dataSource === "pubchem"
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-secondary text-muted-foreground border-border"
+                  }`}
+                >
+                  {analysisResult.dataSource === "pubchem" ? "Live Data" : "Predicted"}
                 </span>
               )}
             </div>
+            <p className="text-[10px] font-mono text-muted-foreground shrink-0">
+              Powered by <span className="text-primary">Pawanax AI</span>
+            </p>
           </div>
 
           {/* Pipeline strip */}

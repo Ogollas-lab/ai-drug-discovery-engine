@@ -367,6 +367,22 @@ Do not invent data. Do not generate SMILES.
     };
   }
 
+  /** PubChem + rule-based engagement proxy — NOT a trained GNN. */
+  static async predictBindingAffinity(molecule, targetProtein, externalData) {
+    const analyzer = require('../engine/analysis/molecule-analyzer');
+    return analyzer.predictBindingAffinity(molecule, targetProtein, externalData);
+  }
+
+  static async predictToxicity(molecule, externalData) {
+    const analyzer = require('../engine/analysis/molecule-analyzer');
+    return analyzer.predictToxicity(molecule, externalData);
+  }
+
+  static async predictADME(molecule, externalData) {
+    const analyzer = require('../engine/analysis/molecule-analyzer');
+    return analyzer.predictADME(molecule, externalData);
+  }
+
   /**
    * Generate executive summary for non-technical stakeholders.
    * Africa-context aware.

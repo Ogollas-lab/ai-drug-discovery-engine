@@ -9,20 +9,27 @@ class ExternalDataService {
    */
   static async fetchPubChemPropertiesBySMILES(smiles) {
     try {
-      const response = await axios.get(`${PUBCHEM_BASE_URL}/compound/smiles/${smiles}/property/MolecularWeight,MolecularFormula,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TopoLogicalPolarSurfaceArea/JSON`, {
-        timeout: 10000
-      });
+      const encoded = encodeURIComponent(smiles);
+      const url = `${PUBCHEM_BASE_URL}/compound/smiles/${encoded}/property/MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,IUPACName/JSON`;
+      const response = await axios.get(url, { timeout: 15000 });
 
-      const properties = response.data.properties[0];
+      const props = response.data?.PropertyTable?.Properties?.[0]
+        || response.data?.properties?.[0];
+
+      if (!props || !props.CID) {
+        return null;
+      }
+
       return {
-        pubchemCid: properties.CID,
-        molecularWeight: properties.MolecularWeight,
-        molecularFormula: properties.MolecularFormula,
-        logP: properties.XLogP,
-        hBondDonors: properties.HBondDonorCount,
-        hBondAcceptors: properties.HBondAcceptorCount,
-        rotatableBonds: properties.RotatableBondCount,
-        topologicalPolarSurfaceArea: properties.TopoLogicalPolarSurfaceArea,
+        pubchemCid: props.CID,
+        molecularWeight: props.MolecularWeight,
+        molecularFormula: props.MolecularFormula,
+        logP: props.XLogP ?? props.XLOGP ?? null,
+        hBondDonors: props.HBondDonorCount,
+        hBondAcceptors: props.HBondAcceptorCount,
+        rotatableBonds: props.RotatableBondCount,
+        topologicalPolarSurfaceArea: props.TPSA ?? props.TopoLogicalPolarSurfaceArea,
+        iupacName: props.IUPACName,
         source: 'pubchem'
       };
     } catch (error) {
@@ -82,7 +89,7 @@ class ExternalDataService {
   static async searchSimilarCompounds(smiles, threshold = 0.9) {
     try {
       const response = await axios.get(
-        `${PUBCHEM_BASE_URL}/compound/smiles/${smiles}/cids/JSON?Threshold=${threshold}`,
+        `${PUBCHEM_BASE_URL}/compound/smiles/${encodeURIComponent(smiles)}/cids/JSON?Threshold=${threshold}`,
         { timeout: 10000 }
       );
 
@@ -177,14 +184,14 @@ class ExternalDataService {
   /**
    * Comprehensive molecule lookup combining PubChem and ChEMBL
    */
-  static async comprehensiveMoleculeLookup(smiles) {
+  static async comprehensiveMoleculeLookup(smiles, { includeBioassays = false } = {}) {
     const [pubChemData, chemblData] = await Promise.all([
       this.fetchPubChemPropertiesBySMILES(smiles),
       this.searchChEMBL(smiles)
     ]);
 
     let bioassayData = [];
-    if (pubChemData?.pubchemCid) {
+    if (includeBioassays && pubChemData?.pubchemCid) {
       bioassayData = await this.fetchBioassayData(pubChemData.pubchemCid);
     }
 

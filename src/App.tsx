@@ -24,6 +24,10 @@ import GATPredictor from "./pages/GATPredictor";
 import Validation from "./pages/Validation";
 import Training from "./pages/Training";
 import Governance from "./pages/Governance";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Chat from "./pages/Chat";
+import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +59,10 @@ const App = () => (
               <Route path="/benchmarks" element={<Benchmarks />} />
               <Route path="/classroom" element={<Classroom />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

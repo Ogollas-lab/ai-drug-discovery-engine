@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import FooterSection from "@/components/FooterSection";
-import { generateMoleculeResultReal, type MoleculeResult } from "@/data/targets";
+import { analyzeMoleculeUnified } from "@/lib/analyze-molecule";
+import type { MoleculeResult } from "@/data/targets";
 
 const SAMPLE_INPUT = `CC(=O)OC1=CC=CC=C1C(=O)O
 CN1C=NC2=C1C(=O)N(C(=O)N2C)C
@@ -54,7 +55,9 @@ const Screening = () => {
     // Process in batches of 3 to avoid rate limiting PubChem
     for (let i = 0; i < lines.length; i += 3) {
       const batch = lines.slice(i, i + 3);
-      const batchRes = await Promise.all(batch.map((s) => generateMoleculeResultReal(s)));
+      const batchRes = await Promise.all(
+        batch.map(async (s) => (await analyzeMoleculeUnified(s)).molecule ?? null)
+      );
       
       batchRes.forEach((res, idx) => {
         if (res) batchResults.push(res);
