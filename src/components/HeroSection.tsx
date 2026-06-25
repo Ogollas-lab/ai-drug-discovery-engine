@@ -3,7 +3,7 @@ import { Atom, Zap, Brain, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { resetOnboarding } from "@/components/OnboardingTour";
-
+import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
   return (
