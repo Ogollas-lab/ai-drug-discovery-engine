@@ -1,7 +1,11 @@
 /**
- * Pawanax Chat API — SSE streaming with in-chat tool payloads.
+ * Pawanax Chat API — SSE streaming via Lovable Cloud edge function.
  */
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const CHAT_URL = SUPABASE_URL
+  ? `${SUPABASE_URL}/functions/v1/chat`
+  : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/engine/chat/stream`;
 
 export type ChatRole = 'user' | 'assistant' | 'system';
 
@@ -31,11 +35,13 @@ export async function streamChat(
   onEvent: (event: ChatStreamEvent) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  const token = localStorage.getItem('token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (SUPABASE_PUBLISHABLE_KEY) {
+    headers.Authorization = `Bearer ${SUPABASE_PUBLISHABLE_KEY}`;
+    headers.apikey = SUPABASE_PUBLISHABLE_KEY;
+  }
 
-  const res = await fetch(`${BASE}/api/engine/chat/stream`, {
+  const res = await fetch(CHAT_URL, {
     method: 'POST',
     headers,
     body: JSON.stringify({ messages }),
