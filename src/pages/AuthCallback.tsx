@@ -2,8 +2,29 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
 
-const NEON_AUTH = import.meta.env.VITE_NEON_AUTH_URL
-  || "https://ep-jolly-poetry-amv4s86d.neonauth.c-5.us-east-1.aws.neon.tech/neondb/auth";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+let neonAuthUrlPromise: Promise<string> | null = null;
+
+async function fetchNeonAuthUrl(): Promise<string> {
+  if (!neonAuthUrlPromise) {
+    neonAuthUrlPromise = fetch(`${API_BASE}/api/auth/config`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`auth config ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const url = data?.neonAuthUrl;
+        if (!url) throw new Error("neonAuthUrl missing from /api/auth/config");
+        return url as string;
+      })
+      .catch((err) => {
+        neonAuthUrlPromise = null;
+        throw err;
+      });
+  }
+  return neonAuthUrlPromise;
+}
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -27,12 +48,14 @@ export default function AuthCallback() {
   );
 }
 
-export function getGoogleSignInUrl() {
+export async function getGoogleSignInUrl(): Promise<string> {
+  const base = await fetchNeonAuthUrl();
   const callback = `${window.location.origin}/auth/callback`;
-  return `${NEON_AUTH}/sign-in/social?provider=google&callbackURL=${encodeURIComponent(callback)}`;
+  return `${base}/sign-in/social?provider=google&callbackURL=${encodeURIComponent(callback)}`;
 }
 
-export function getEmailSignInUrl() {
+export async function getEmailSignInUrl(): Promise<string> {
+  const base = await fetchNeonAuthUrl();
   const callback = `${window.location.origin}/auth/callback`;
-  return `${NEON_AUTH}/sign-in?callbackURL=${encodeURIComponent(callback)}`;
+  return `${base}/sign-in?callbackURL=${encodeURIComponent(callback)}`;
 }
