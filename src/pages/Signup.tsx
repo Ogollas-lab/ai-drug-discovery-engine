@@ -27,7 +27,7 @@ export default function Signup() {
           <CardContent className="space-y-3">
             <Button
               className="w-full h-11 bg-primary text-primary-foreground font-display"
-              onClick={() => { window.location.href = getGoogleSignInUrl(); }}
+              onClick={async () => { window.location.href = await getGoogleSignInUrl(); }}
             >
               Sign up with Google
             </Button>
