@@ -123,32 +123,18 @@ async function pubchemAnalyze(smiles: string, fallbackName?: string) {
 
 // ---------- LLM streaming ----------
 async function* streamLLM(messages: ChatMsg[]): AsyncGenerator<string> {
-  const nvidiaKey = Deno.env.get("NVIDIA_API_KEY");
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-
-  let url: string;
-  let headers: Record<string, string>;
-  let model: string;
-
-  if (nvidiaKey) {
-    url = "https://integrate.api.nvidia.com/v1/chat/completions";
-    headers = {
-      Authorization: `Bearer ${nvidiaKey}`,
-      "Content-Type": "application/json",
-    };
-    model = "meta/llama-3.3-70b-instruct";
-  } else if (lovableKey) {
-    url = "https://ai.gateway.lovable.dev/v1/chat/completions";
-    headers = {
-      "Lovable-API-Key": lovableKey,
-      "Content-Type": "application/json",
-      "X-Lovable-AIG-SDK": "edge-function",
-    };
-    model = "google/gemini-2.5-flash";
-  } else {
-    yield "[No AI provider configured. Set LOVABLE_API_KEY or NVIDIA_API_KEY.]";
+  if (!lovableKey) {
+    yield "[LOVABLE_API_KEY not configured.]";
     return;
   }
+  const url = "https://ai.gateway.lovable.dev/v1/chat/completions";
+  const headers: Record<string, string> = {
+    "Lovable-API-Key": lovableKey,
+    "Content-Type": "application/json",
+    "X-Lovable-AIG-SDK": "edge-function",
+  };
+  const model = "google/gemini-2.5-flash";
 
   const res = await fetch(url, {
     method: "POST",
