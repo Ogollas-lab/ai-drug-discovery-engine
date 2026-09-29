@@ -50,7 +50,9 @@ export function engineAnalysisToMoleculeResult(
       cyp3a4Inhibitor: false,
       hergRisk: "low",
       hepatotoxicity: "low",
-      admetConfidence: analysis.engagement.source,
+      admetConfidence: (["experimental", "literature", "predicted"].includes(analysis.engagement.source)
+        ? analysis.engagement.source
+        : "predicted") as "experimental" | "literature" | "predicted",
       admetNote: analysis.engagement.disclaimer,
     },
     offTargets: [],

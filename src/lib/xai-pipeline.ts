@@ -208,19 +208,11 @@ export async function buildFeatureSnapshot(
   }
   
   // Validate descriptors
-  const validation = validateDescriptors({
-    MolecularWeight: mol.mw,
-    XLogP: mol.logp,
-    HBondDonorCount: mol.hDonors,
-    HBondAcceptorCount: mol.hAcceptors,
-    RotatableBondCount: mol.rotBonds,
-    TPSA: mol.tpsa,
-    MolecularFormula: mol.formula,
-  });
+  const validation = validateDescriptors(mol);
   
   if (!validation.valid) {
-    errors.push(...validation.errors);
-    console.error(`[XAI Pipeline] Descriptor validation failed:`, validation.errors);
+    if (validation.error) errors.push(validation.error);
+    console.error(`[XAI Pipeline] Descriptor validation failed:`, validation.error);
   }
   
   if (validation.warnings.length > 0) {

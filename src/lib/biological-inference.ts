@@ -282,9 +282,10 @@ export function computeBiologicalProfile(
   const permeability: "high" | "moderate" | "low" =
     tpsa < 60 ? "high" : tpsa < 120 ? "moderate" : "low";
 
-  const hepatotoxicity: "low" | "moderate" | "high" =
+  const hepatotoxicity = (
     scaffold.scaffoldClass === "nsaid" && features.hasCarboxylicAcid ? "low" :
-    logp > 4 ? "moderate" : "low";
+    logp > 4 ? "moderate" : "low"
+  ) as "low" | "moderate" | "high";
 
   // ── DDI warnings ──
   const ddiWarnings: string[] = [];

@@ -12,7 +12,7 @@ import { useSearchParams } from "react-router-dom";
 const Pricing = () => {
   const { user } = useAuth();
   const { subscription, refreshSubscription } = useSubscription();
-  const currentTier = subscription?.tier || "free";
+  const currentTier: string = (subscription as { tier?: string } | null)?.tier || "free";
   const { toast } = useToast();
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
