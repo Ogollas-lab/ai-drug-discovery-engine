@@ -607,7 +607,7 @@ const Education = () => {
                             <div className="grid grid-cols-3 gap-2 text-[10px]">
                               <div className="bg-background/50 rounded p-2 border border-border">
                                 <div className="text-muted-foreground font-mono">Affinity</div>
-                                <div className="text-sm font-bold text-primary">{analysisResult.affinity.toFixed(2)}</div>
+                                <div className="text-sm font-bold text-primary">{analysisResult.gnnEngagementScore.toFixed(2)}</div>
                               </div>
                               <div className="bg-background/50 rounded p-2 border border-border">
                                 <div className="text-muted-foreground font-mono">hERG Risk</div>
@@ -617,8 +617,8 @@ const Education = () => {
                               </div>
                               <div className="bg-background/50 rounded p-2 border border-border">
                                 <div className="text-muted-foreground font-mono">CYP3A4</div>
-                                <div className={`text-sm font-bold ${analysisResult.admet.cyp3a4 ? "text-yellow-400" : "text-primary"}`}>
-                                  {analysisResult.admet.cyp3a4 ? "Substrate" : "Clear"}
+                                <div className={`text-sm font-bold ${analysisResult.admet.cyp3a4Substrate ? "text-yellow-400" : "text-primary"}`}>
+                                  {analysisResult.admet.cyp3a4Substrate ? "Substrate" : "Clear"}
                                 </div>
                               </div>
                             </div>
