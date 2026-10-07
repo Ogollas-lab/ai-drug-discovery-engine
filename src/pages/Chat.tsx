@@ -101,10 +101,19 @@ export default function Chat() {
       );
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
+        console.error("[Pawanax chat] request failed:", err);
+        const raw = (err as Error).message || "";
+        const friendly = /failed to fetch|network/i.test(raw)
+          ? "Unable to connect to Pawanax AI. Please check your connection and try again."
+          : /402|credit/i.test(raw)
+          ? "AI service is temporarily unavailable (usage limit reached)."
+          : /429/.test(raw)
+          ? "Too many requests — please wait a moment and try again."
+          : `AI service is temporarily unavailable. ${raw}`;
         setMessages((m) =>
           m.map((msg) =>
             msg.id === assistantId
-              ? { ...msg, content: `Something went wrong. Is the backend running? ${(err as Error).message}`, streaming: false }
+              ? { ...msg, content: friendly, streaming: false }
               : msg
           )
         );
