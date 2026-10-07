@@ -17,7 +17,18 @@ export interface ChatMessage {
   content: string;
   toolEvents?: ToolEvent[];
   streaming?: boolean;
+  /** Friendly error text when this assistant reply failed. */
+  error?: string;
+  /** Id of the user message to resend on Retry. */
+  retryFor?: string;
 }
+
+export const GENERAL_PROMPTS = [
+  'Explain artificial intelligence in simple terms.',
+  'Help me analyze this business idea.',
+  'Create a business plan for my startup.',
+  'Help me write a professional email.',
+];
 
 export type ToolEvent =
   | { type: 'tool_start'; tool: string; input?: unknown }
