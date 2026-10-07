@@ -1,11 +1,13 @@
 /**
  * Pawanax Chat API — SSE streaming via Lovable Cloud edge function.
  */
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-const CHAT_URL = SUPABASE_URL
-  ? `${SUPABASE_URL}/functions/v1/chat`
-  : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/engine/chat/stream`;
+// Publishable (public) values — safe in frontend. Fallbacks ensure we never hit a localhost backend.
+const SUPABASE_URL =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) || 'https://wddvyfdfgchmdkmzwbrz.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY =
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZHZ5ZmRmZ2NobWRrbXp3YnJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MDU3MDcsImV4cCI6MjA5ODM4MTcwN30.YnrLcIBsL3CLRph5jvWbKQlkAgwZm5RausFRYaAI-q4';
+const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat`;
 
 export type ChatRole = 'user' | 'assistant' | 'system';
 
