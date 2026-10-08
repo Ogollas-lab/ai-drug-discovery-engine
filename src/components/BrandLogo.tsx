@@ -44,7 +44,7 @@ const BrandLogo = ({
             <span
               className={`font-display font-bold ${s.product} tracking-tight text-foreground truncate`}
             >
-              Vitalis<span className="text-primary"> AI</span>
+              Vitalis
             </span>
             {showTagline && (
               <span
