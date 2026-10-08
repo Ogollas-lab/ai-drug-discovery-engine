@@ -25,7 +25,7 @@ export default function Login() {
         <Card className="glass-panel border-border/60">
           <CardHeader className="text-center">
             <CardTitle className="font-display text-balance">
-              Sign in to Vitalis AI Drug Engine
+              Sign in to Vitalis Drug Engine
             </CardTitle>
             <p className="text-xs font-mono text-muted-foreground mt-1">
               Powered by Pawanax AI · Neon Auth

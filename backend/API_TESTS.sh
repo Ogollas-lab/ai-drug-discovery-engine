@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# 🧬 Vitalis AI - API Test & Example Calls
+# 🧬 Vitalis - API Test & Example Calls
 # Run these curl commands to test the backend
 # Make sure the server is running: npm run dev
 
 API_URL="http://localhost:5000/api"
 MOLECULE_ID=""
 
-echo "🧬 Vitalis AI Backend - API Testing Suite"
+echo "🧬 Vitalis Backend - API Testing Suite"
 echo "==========================================="
 echo ""
 

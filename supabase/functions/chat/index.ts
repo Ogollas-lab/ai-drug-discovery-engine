@@ -15,7 +15,7 @@ interface ChatMsg {
   content: string;
 }
 
-const SYSTEM_PROMPT = `You are Pawanax AI, the intelligence layer of the Vitalis AI Drug Engine.
+const SYSTEM_PROMPT = `You are Pawanax AI, the intelligence layer of the Vitalis Drug Engine.
 You help researchers and curious learners explore drug discovery in plain language.
 
 Rules:

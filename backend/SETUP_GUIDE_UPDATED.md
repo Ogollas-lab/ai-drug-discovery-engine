@@ -1,4 +1,4 @@
-# Vitalis AI Backend - Setup Guide (Updated)
+# Vitalis Backend - Setup Guide (Updated)
 
 ## Table of Contents
 
@@ -251,7 +251,7 @@ npm start
 ```
 ✓ MongoDB connected
 ✓ Email service verified
-🚀 Vitalis AI Backend running on http://localhost:5000
+🚀 Vitalis Backend running on http://localhost:5000
 📊 API Documentation: http://localhost:5000/api/docs
 🔍 Health Check: http://localhost:5000/api/health
 ```

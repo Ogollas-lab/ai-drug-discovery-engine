@@ -18,7 +18,7 @@ export default function Signup() {
         <Card className="glass-panel border-border/60">
           <CardHeader className="text-center">
             <CardTitle className="font-display text-balance">
-              Join Vitalis AI Drug Engine
+              Join Vitalis Drug Engine
             </CardTitle>
             <p className="text-xs font-mono text-muted-foreground mt-1">
               Intelligence by Pawanax AI · Neon Auth

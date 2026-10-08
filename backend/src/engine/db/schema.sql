@@ -1,4 +1,4 @@
--- Vitalis AI Drug Discovery Engine — Neon Postgres Schema
+-- Vitalis Drug Discovery Engine — Neon Postgres Schema
 -- W3C PROV-inspired provenance + DMTA run model
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";

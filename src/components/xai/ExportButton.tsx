@@ -5,7 +5,7 @@ import type { XAIPrediction } from "@/data/xai-molecules";
 export const ExportButton = ({ prediction }: { prediction: XAIPrediction }) => {
   const handleExport = () => {
     const lines = [
-      `VITALIS AI — XAI Analysis Report`,
+      `VITALIS — XAI Analysis Report`,
       `${"=".repeat(50)}`,
       `Generated: ${new Date().toISOString()}`,
       ``,

@@ -198,7 +198,7 @@ export const API_ENDPOINTS = {
 
 ```bash
 VITE_API_URL=http://localhost:5000/api
-VITE_APP_NAME=Vitalis AI
+VITE_APP_NAME=Vitalis
 VITE_APP_VERSION=2.0.0
 ```
 
@@ -1218,7 +1218,7 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Vitalis AI Backend running on http://localhost:${PORT}`);
+  console.log(`🚀 Vitalis Backend running on http://localhost:${PORT}`);
   console.log(`📊 API Documentation: http://localhost:${PORT}/api/docs`);
 });
 ```

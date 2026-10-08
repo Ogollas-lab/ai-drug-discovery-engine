@@ -2,7 +2,7 @@
 
 ## 🎯 Project Overview
 
-A comprehensive JWT-based authentication and subscription management system has been successfully implemented for the Vitalis AI backend, enabling:
+A comprehensive JWT-based authentication and subscription management system has been successfully implemented for the Vitalis backend, enabling:
 
 ✅ User account management with secure JWT authentication
 ✅ 4-tier subscription model (Free, Pro, University, Enterprise)
@@ -114,7 +114,7 @@ npm install
 ### 3. Start Server
 ```bash
 npm start
-# Expected: ✓ MongoDB connected, 🚀 Vitalis AI Backend running on http://localhost:5000
+# Expected: ✓ MongoDB connected, 🚀 Vitalis Backend running on http://localhost:5000
 ```
 
 ### 4. Test Authentication

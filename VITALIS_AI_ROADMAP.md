@@ -1,4 +1,4 @@
-# Vitalis AI - Production Roadmap 🗺️
+# Vitalis - Production Roadmap 🗺️
 
 ## Executive Summary
 
@@ -240,7 +240,7 @@ Visual:
 
 Copy:
 "In Kenya, researchers wait 10+ years for drug discovery research done elsewhere.
-With Vitalis AI, discover promising drug candidates in days—right here in Kenya.
+With Vitalis, discover promising drug candidates in days—right here in Kenya.
 No expensive lab. No waiting. Just AI and data."
 ```
 
@@ -274,7 +274,7 @@ Each step shows real data/interface screenshots
 Instead of benchmark scores:
 
 "Research Institute in Nairobi just discovered 3 novel malaria inhibitors
-using Vitalis AI in 4 weeks (would have taken 2 years)"
+using Vitalis in 4 weeks (would have taken 2 years)"
 
 "Students in Kampala learned drug discovery through 40 AI-guided simulations
 instead of waiting for real lab access"
@@ -428,7 +428,7 @@ Content Sections:
    - Traditional vs AI approach
    - Real timeline comparison
 
-2. **"How to Use Vitalis AI"**
+2. **"How to Use Vitalis"**
    - 5-minute interactive tutorial
    - Real demo with actual data
    - Common mistakes & how to avoid
@@ -617,7 +617,7 @@ Track:
 
 ### 9.2 Admin Dashboard
 
-For Vitalis AI team:
+For Vitalis team:
 - Total users, institutions
 - Popular targets/diseases
 - Prediction statistics
