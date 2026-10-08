@@ -1,5 +1,5 @@
 /**
- * AIPredictionService — Vitalis AI Backend
+ * AIPredictionService — Vitalis Backend
  * ─────────────────────────────────────────
  * Architecture contract:
  *
@@ -27,7 +27,7 @@ const MODEL_ID = 'gemini-2.5-flash-lite';
 // Enforces pharmaceutical-grade scientific behavior.
 // ─────────────────────────────────────────────────────────────────────────────
 const SCIENTIFIC_SYSTEM_PROMPT = `
-You are a scientific reasoning assistant embedded in Vitalis AI, a pharmaceutical drug discovery platform.
+You are a scientific reasoning assistant embedded in Vitalis, a pharmaceutical drug discovery platform.
 
 Your role is STRICTLY limited to:
 - Interpreting validated molecular descriptors provided to you

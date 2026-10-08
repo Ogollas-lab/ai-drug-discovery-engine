@@ -71,7 +71,7 @@ async function startServer() {
   if (process.env.NODE_ENV === 'test') return app;
 
   app.listen(PORT, () => {
-    console.log(`\n🚀 Vitalis AI Drug Engine → http://localhost:${PORT}`);
+    console.log(`\n🚀 Vitalis Drug Engine → http://localhost:${PORT}`);
     console.log(`🧬 Engine health → http://localhost:${PORT}/api/engine/health`);
     console.log(`💬 Pawanax Chat   → http://localhost:${PORT}/api/engine/chat/stream\n`);
   });

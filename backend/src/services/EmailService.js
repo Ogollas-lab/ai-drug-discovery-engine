@@ -41,9 +41,9 @@ async function sendVerificationEmail(user, verificationToken) {
   const mailOptions = {
     from: emailConfig.from,
     to: user.email,
-    subject: 'Verify your Vitalis AI account',
+    subject: 'Verify your Vitalis account',
     html: `
-      <h2>Welcome to Vitalis AI! 🚀</h2>
+      <h2>Welcome to Vitalis! 🚀</h2>
       <p>Hi ${user.firstName || 'User'},</p>
       <p>Thank you for signing up. Please verify your email address by clicking the button below:</p>
       <a href="${verificationLink}" style="
@@ -58,7 +58,7 @@ async function sendVerificationEmail(user, verificationToken) {
       <p>Or paste this link in your browser:</p>
       <p><code>${verificationLink}</code></p>
       <p>This link expires in 24 hours.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 
@@ -85,7 +85,7 @@ async function sendPasswordResetEmail(user, resetToken) {
   const mailOptions = {
     from: emailConfig.from,
     to: user.email,
-    subject: 'Reset your Vitalis AI password',
+    subject: 'Reset your Vitalis password',
     html: `
       <h2>Password Reset Request</h2>
       <p>Hi ${user.firstName || 'User'},</p>
@@ -103,7 +103,7 @@ async function sendPasswordResetEmail(user, resetToken) {
       <p><code>${resetLink}</code></p>
       <p>This link expires in 24 hours.</p>
       <p>If you didn't request this, please ignore this email.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 
@@ -127,7 +127,7 @@ async function sendSubscriptionUpgradeEmail(user, newTier, price) {
   const mailOptions = {
     from: emailConfig.from,
     to: user.email,
-    subject: `Welcome to Vitalis AI ${newTier} tier!`,
+    subject: `Welcome to Vitalis ${newTier} tier!`,
     html: `
       <h2>Subscription Upgraded! 🎉</h2>
       <p>Hi ${user.firstName || 'User'},</p>
@@ -144,7 +144,7 @@ async function sendSubscriptionUpgradeEmail(user, newTier, price) {
       <p><strong>Price:</strong> $${price}/month</p>
       <p><strong>Renewal Date:</strong> ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString()}</p>
       <p>You can manage your subscription at any time in your account settings.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 
@@ -165,7 +165,7 @@ async function sendSubscriptionCancellationEmail(user) {
   const mailOptions = {
     from: emailConfig.from,
     to: user.email,
-    subject: 'Your Vitalis AI subscription has been cancelled',
+    subject: 'Your Vitalis subscription has been cancelled',
     html: `
       <h2>Subscription Cancelled</h2>
       <p>Hi ${user.firstName || 'User'},</p>
@@ -178,7 +178,7 @@ async function sendSubscriptionCancellationEmail(user) {
       </ul>
       <p>We'd love to hear why you cancelled. Your feedback helps us improve.</p>
       <p>If you'd like to reactivate your subscription, visit your account settings.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 
@@ -199,11 +199,11 @@ async function sendTeamInvitationEmail(inviteEmail, invitedBy, teamName, invitat
   const mailOptions = {
     from: emailConfig.from,
     to: inviteEmail,
-    subject: `You're invited to join ${teamName} on Vitalis AI`,
+    subject: `You're invited to join ${teamName} on Vitalis`,
     html: `
       <h2>Team Invitation 👥</h2>
       <p>Hi,</p>
-      <p><strong>${invitedBy.firstName}</strong> from <strong>${teamName}</strong> has invited you to join their team on Vitalis AI!</p>
+      <p><strong>${invitedBy.firstName}</strong> from <strong>${teamName}</strong> has invited you to join their team on Vitalis!</p>
       <p>Click the button below to accept the invitation:</p>
       <a href="${invitationLink}" style="
         display: inline-block;
@@ -217,7 +217,7 @@ async function sendTeamInvitationEmail(inviteEmail, invitedBy, teamName, invitat
       <p>Or paste this link in your browser:</p>
       <p><code>${invitationLink}</code></p>
       <p>This invitation expires in 7 days.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 
@@ -238,7 +238,7 @@ async function sendPaymentFailureEmail(user, reason) {
   const mailOptions = {
     from: emailConfig.from,
     to: user.email,
-    subject: '⚠️ Payment failed for your Vitalis AI subscription',
+    subject: '⚠️ Payment failed for your Vitalis subscription',
     html: `
       <h2>Payment Failed</h2>
       <p>Hi ${user.firstName || 'User'},</p>
@@ -248,7 +248,7 @@ async function sendPaymentFailureEmail(user, reason) {
       <h3>What to do:</h3>
       <p>Please update your payment method in your account settings within 7 days to avoid losing access.</p>
       <p>If you need help, please contact our support team.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 
@@ -269,7 +269,7 @@ async function sendUsageLimitWarningEmail(user, usageType, percentageUsed) {
   const mailOptions = {
     from: emailConfig.from,
     to: user.email,
-    subject: `⚠️ You're approaching your ${usageType} limit on Vitalis AI`,
+    subject: `⚠️ You're approaching your ${usageType} limit on Vitalis`,
     html: `
       <h2>Usage Limit Warning</h2>
       <p>Hi ${user.firstName || 'User'},</p>
@@ -281,7 +281,7 @@ async function sendUsageLimitWarningEmail(user, usageType, percentageUsed) {
         <li>Wait until next month for your quota to reset</li>
       </ul>
       <p>Upgrade now to continue uninterrupted access.</p>
-      <p>Best regards,<br>Vitalis AI Team</p>
+      <p>Best regards,<br>Vitalis Team</p>
     `
   };
 

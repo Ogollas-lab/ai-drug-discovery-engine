@@ -26,7 +26,7 @@ const BrandLogo = ({
     <Link
       to="/"
       className={`flex items-center gap-2.5 group shrink-0 min-h-[44px] ${className}`}
-      aria-label="Vitalis AI Drug Engine — powered by Pawanax AI"
+      aria-label="Vitalis Drug Engine — powered by Pawanax AI"
     >
       <div
         className={`${s.img} rounded-full overflow-hidden ring-2 ring-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.25)] group-hover:ring-primary/60 transition-all shrink-0`}
@@ -44,7 +44,7 @@ const BrandLogo = ({
             <span
               className={`font-display font-bold ${s.product} tracking-tight text-foreground truncate`}
             >
-              Vitalis<span className="text-primary"> AI</span>
+              Vitalis
             </span>
             {showTagline && (
               <span

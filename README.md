@@ -2,7 +2,7 @@
   <img src="public/pawanax-logo.png" alt="Pawanax AI" width="96" />
 </p>
 
-<h1 align="center">Vitalis AI Drug Engine</h1>
+<h1 align="center">Vitalis Drug Engine</h1>
 <p align="center"><strong>Research-grade in-silico drug discovery — powered by <em>Pawanax AI</em></strong></p>
 
 <p align="center">
@@ -21,7 +21,7 @@ When you open this repository, you will find **two names that work together**:
 
 | Name | Role | Think of it as… |
 |------|------|-----------------|
-| **Vitalis AI Drug Engine** | The **product** — workflows, UI, DMTA pipeline, persistence | The laboratory instrument |
+| **Vitalis Drug Engine** | The **product** — workflows, UI, DMTA pipeline, persistence | The laboratory instrument |
 | **Pawanax AI** | The **intelligence** — NVIDIA NIM, LangChain agents, reasoning | The scientist operating the instrument |
 
 The red **Pawanax** logo marks the AI layer. **Vitalis** is the engine researchers interact with daily.
@@ -30,7 +30,7 @@ The red **Pawanax** logo marks the AI layer. **Vitalis** is the engine researche
 
 ## Mission
 
-Traditional drug discovery takes 10+ years and billions of dollars. **Vitalis AI Drug Engine** compresses the *Design → Make → Test → Analyze* (DMTA) loop into hours of in-silico work — with **honest uncertainty labels**, PubChem-validated descriptors, and human-in-the-loop (HITL) safety gates before any high-risk recommendation proceeds.
+Traditional drug discovery takes 10+ years and billions of dollars. **Vitalis Drug Engine** compresses the *Design → Make → Test → Analyze* (DMTA) loop into hours of in-silico work — with **honest uncertainty labels**, PubChem-validated descriptors, and human-in-the-loop (HITL) safety gates before any high-risk recommendation proceeds.
 
 Built for researchers, educators, and teams focused on diseases that disproportionately affect underserved populations (malaria, TB, sickle cell, NTDs).
 
@@ -127,7 +127,7 @@ sequenceDiagram
 mindmap
   root((Vitalis Experience))
     Product
-      Vitalis AI Drug Engine
+      Vitalis Drug Engine
       Red clinical theme
       Mobile-first 320px+
     Intelligence
@@ -506,16 +506,16 @@ You will succeed fastest if you internalize this order:
 ## License & credits
 
 - **License:** Apache 2.0
-- **Engine:** Vitalis AI Drug Engine
+- **Engine:** Vitalis Drug Engine
 - **Intelligence:** Pawanax AI (NVIDIA NIM + LangChain)
-- **Hackathon origin:** Vitalis AI Drug Discovery Hackathon 2026
+- **Hackathon origin:** Vitalis Drug Discovery Hackathon 2026
 
 ---
 
 <p align="center">
   <img src="public/pawanax-logo.png" alt="" width="32" />
   <br />
-  <em>Vitalis AI Drug Engine · Powered by Pawanax AI</em>
+  <em>Vitalis Drug Engine · Powered by Pawanax AI</em>
   <br />
   <strong>Last updated:</strong> June 2026 · <strong>Version:</strong> 3.0.0
 </p>

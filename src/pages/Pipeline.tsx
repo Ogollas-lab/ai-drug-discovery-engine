@@ -78,7 +78,7 @@ const PIPELINE_STAGES: PipelineStage[] = [
     outputs: ["Hit compounds (IC50 < 10 µM)", "Structure-activity data", "Preliminary SAR"],
     challenges: ["High false-positive rates", "Compound availability", "Assay interference"],
     africanContext: "Open-source libraries like the MMV Malaria Box and DNDi NTD sets provide curated starting points for neglected tropical diseases prevalent in Africa.",
-    tools: ["Vitalis AI Workspace", "ChEMBL", "PubChem", "AutoDock"],
+    tools: ["Vitalis Workspace", "ChEMBL", "PubChem", "AutoDock"],
     color: "accent",
   },
   {
@@ -547,8 +547,8 @@ const Pipeline = () => {
                       </span>
                     ))}
                   </div>
-                  {(activeData.tools.includes("Vitalis AI Workspace") || activeData.tools.includes("Vitalis Predictions")) && (
-                    <Link to={activeData.tools.includes("Vitalis AI Workspace") ? "/workspace" : "/predictions"}>
+                  {(activeData.tools.includes("Vitalis Workspace") || activeData.tools.includes("Vitalis Predictions")) && (
+                    <Link to={activeData.tools.includes("Vitalis Workspace") ? "/workspace" : "/predictions"}>
                       <Button size="sm" variant="outline" className="gap-1.5 text-xs">
                         <ExternalLink className="w-3 h-3" />
                         Try in Vitalis

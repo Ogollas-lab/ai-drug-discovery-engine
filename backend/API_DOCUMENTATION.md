@@ -1,7 +1,7 @@
-# Vitalis AI - Drug Discovery Engine API Documentation
+# Vitalis - Drug Discovery Engine API Documentation
 
 ## Overview
-The Vitalis AI backend provides a comprehensive REST API for in-silico drug discovery with AI-powered molecular predictions, real-time data integration from PubChem and ChEMBL, and educational simulations.
+The Vitalis backend provides a comprehensive REST API for in-silico drug discovery with AI-powered molecular predictions, real-time data integration from PubChem and ChEMBL, and educational simulations.
 
 **Base URL:** `http://localhost:5000/api`
 

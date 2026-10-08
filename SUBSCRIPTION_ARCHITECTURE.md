@@ -1,4 +1,4 @@
-# Vitalis AI Subscription Integration - Visual Architecture
+# Vitalis Subscription Integration - Visual Architecture
 
 ## System Architecture Overview
 

@@ -1,4 +1,4 @@
-# 🚀 Quick Start: Enable Real Payments in Vitalis AI
+# 🚀 Quick Start: Enable Real Payments in Vitalis
 
 ## Current State
 ✅ Subscription system is 82% complete
@@ -28,22 +28,22 @@
 In Stripe Dashboard → Products → Add Product:
 
 ```
-Product 1: "Vitalis AI - Student Pro"
+Product 1: "Vitalis - Student Pro"
 ├─ Price: $3.99/month (recurring)
 ├─ Price ID: price_1XXXXXX
 └─ Save to STRIPE_PRICES.student
 
-Product 2: "Vitalis AI - Researcher" 
+Product 2: "Vitalis - Researcher" 
 ├─ Price: $15.99/month (recurring)
 ├─ Price ID: price_1XXXXXX
 └─ Save to STRIPE_PRICES.researcher
 
-Product 3: "Vitalis AI - University"
+Product 3: "Vitalis - University"
 ├─ Price: $299.99/month (recurring)
 ├─ Price ID: price_1XXXXXX
 └─ Save to STRIPE_PRICES.university
 
-Product 4: "Vitalis AI - Enterprise"
+Product 4: "Vitalis - Enterprise"
 ├─ Price: $499.99/month (custom)
 ├─ Price ID: price_1XXXXXX
 └─ Save to STRIPE_PRICES.enterprise

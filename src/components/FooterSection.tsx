@@ -7,7 +7,7 @@ const FooterSection = () => (
 
       <div className="flex flex-col items-center sm:items-end gap-2 text-center sm:text-right">
         <p className="text-xs text-muted-foreground font-mono leading-relaxed max-w-sm">
-          <span className="text-foreground font-display font-semibold">Vitalis AI Drug Engine</span>
+          <span className="text-foreground font-display font-semibold">Vitalis Drug Engine</span>
           {" · "}
           Intelligence by{" "}
           <span className="text-primary">Pawanax AI</span>

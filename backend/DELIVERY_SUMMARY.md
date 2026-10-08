@@ -2,7 +2,7 @@
 
 ## ✅ What Has Been Built
 
-A **production-ready JWT authentication and subscription management system** for Vitalis AI with full Stripe integration, email notifications, and comprehensive documentation.
+A **production-ready JWT authentication and subscription management system** for Vitalis with full Stripe integration, email notifications, and comprehensive documentation.
 
 ---
 
@@ -272,7 +272,7 @@ cp .env.example .env
 npm start
 # Expected output:
 # ✓ MongoDB connected
-# 🚀 Vitalis AI Backend running on http://localhost:5000
+# 🚀 Vitalis Backend running on http://localhost:5000
 ```
 
 ### 3. Test Authentication

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Vitalis AI uses JWT-based authentication with role-based subscription tiers to manage access and usage limits.
+Vitalis uses JWT-based authentication with role-based subscription tiers to manage access and usage limits.
 
 ### Authentication Flow
 

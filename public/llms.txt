@@ -1,4 +1,4 @@
-# Vitalis AI
+# Vitalis
 
 > AI-powered, in-silico drug discovery platform for African researchers, educators, and students. Predicts molecular binding, screens compound libraries, and explains model decisions for neglected tropical diseases.
 

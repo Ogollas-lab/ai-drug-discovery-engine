@@ -1,4 +1,4 @@
-# Vitalis AI Subscription System - Setup & Integration Guide
+# Vitalis Subscription System - Setup & Integration Guide
 
 ## Executive Summary
 
@@ -231,7 +231,7 @@ VITE_API_URL=https://api.vitalisai.com
 // Student Pro Tier
 POST /v1/products
 {
-  "name": "Vitalis AI - Student Pro",
+  "name": "Vitalis - Student Pro",
   "description": "100-200 analyses per day, advanced predictions",
   "type": "service"
 }
@@ -246,17 +246,17 @@ POST /v1/prices
 
 // Researcher Tier
 POST /v1/products
-{ "name": "Vitalis AI - Researcher", ... }
+{ "name": "Vitalis - Researcher", ... }
 // Create recurring price: $15.99/month
 
 // University Tier
 POST /v1/products
-{ "name": "Vitalis AI - University", ... }
+{ "name": "Vitalis - University", ... }
 // Create recurring price: $299.99/month
 
 // Enterprise Tier
 POST /v1/products
-{ "name": "Vitalis AI - Enterprise", ... }
+{ "name": "Vitalis - Enterprise", ... }
 // Create recurring price: $499.99/month (custom)
 ```
 

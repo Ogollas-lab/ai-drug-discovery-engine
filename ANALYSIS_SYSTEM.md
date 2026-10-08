@@ -1,8 +1,8 @@
-# Vitalis AI - Analysis System Architecture
+# Vitalis - Analysis System Architecture
 
 ## Overview
 
-Vitalis AI is a **million-dollar AI drug discovery platform** that combines real-time molecular data from public databases with advanced AI analysis through Google Gemini to provide actionable insights for pharmaceutical researchers.
+Vitalis is a **million-dollar AI drug discovery platform** that combines real-time molecular data from public databases with advanced AI analysis through Google Gemini to provide actionable insights for pharmaceutical researchers.
 
 ## System Architecture
 
@@ -94,7 +94,7 @@ Insights + Properties → Real-time display with visual indicators
 Each prompt includes:
 ```
 [EXPERT ROLE DEFINITION]
-Your role is to [specific analysis task] at Vitalis AI.
+Your role is to [specific analysis task] at Vitalis.
 
 [SPECIFIC INSTRUCTIONS]
 1. [analyze X]
@@ -114,7 +114,7 @@ Your role is to [specific analysis task] at Vitalis AI.
 
 ```
 You are an expert medicinal chemist and pharmacologist analyzing molecular structures 
-for drug development at Vitalis AI.
+for drug development at Vitalis.
 
 Your role is to:
 1. Analyze molecular properties against Lipinski's Rule of Five

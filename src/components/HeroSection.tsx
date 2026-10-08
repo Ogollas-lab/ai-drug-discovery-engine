@@ -35,7 +35,7 @@ const HeroSection = () => {
             className="w-6 h-6 sm:w-7 sm:h-7 rounded-full ring-1 ring-primary/40"
           />
           <span className="text-[11px] sm:text-sm font-mono text-primary tracking-wider uppercase leading-snug">
-            Vitalis AI Drug Engine
+            Vitalis Drug Engine
           </span>
           <span className="hidden xs:inline text-[10px] font-mono text-muted-foreground">
             · powered by Pawanax AI
@@ -53,7 +53,7 @@ const HeroSection = () => {
           <span className="text-primary glow-text">Drug Discovery</span>
           <br />
           <span className="text-foreground text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
-            with Vitalis AI
+            with Vitalis
           </span>
         </motion.h1>
 

@@ -9,7 +9,7 @@ const { createEngineTools } = require('../tools/engine-tools');
 const { analyzeMolecule } = require('../analysis/molecule-analyzer');
 const { log } = require('../observability/logger');
 
-const SYSTEM_PROMPT = `You are Pawanax AI, the intelligence layer powering the Vitalis AI Drug Engine.
+const SYSTEM_PROMPT = `You are Pawanax AI, the intelligence layer powering the Vitalis Drug Engine.
 You help researchers AND non-scientists explore drug discovery in plain language.
 
 Rules:
