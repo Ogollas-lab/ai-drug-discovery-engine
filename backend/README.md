@@ -1,12 +1,12 @@
-# Vitalis AI - In-Silico Drug Discovery Engine Backend
+# Vitalis - In-Silico Drug Discovery Engine Backend
 
-![Vitalis AI](https://img.shields.io/badge/AI-Drug%20Discovery-blue)
+![Vitalis](https://img.shields.io/badge/AI-Drug%20Discovery-blue)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-green)
 ![License](https://img.shields.io/badge/License-MIT-black)
 
 ## Overview
 
-Vitalis AI is an AI-powered in-silico drug discovery platform designed for researchers, educators, and hackathon judges. It combines:
+Vitalis is an AI-powered in-silico drug discovery platform designed for researchers, educators, and hackathon judges. It combines:
 
 - **AI-Powered Predictions**: Uses Google Gemini 2.5 Flash to predict molecular properties, binding affinities, toxicity, and ADME profiles
 - **Real-time Data Integration**: Fetches live data from PubChem and ChEMBL for validation
@@ -427,17 +427,17 @@ MIT License - See LICENSE.md
 
 ## Citation
 
-If you use Vitalis AI in your research, please cite:
+If you use Vitalis in your research, please cite:
 
 ```
-Vitalis AI Backend (2026)
+Vitalis Backend (2026)
 In-Silico Drug Discovery Engine
 GitHub: https://github.com/Ogollas-lab/ai-drug-discovery-engine
 ```
 
 ## Team
 
-Developed for the Vitalis AI Drug Discovery Hackathon 2026
+Developed for the Vitalis Drug Discovery Hackathon 2026
 
 ---
 
