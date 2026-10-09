@@ -63,6 +63,45 @@
 }
 
 @layer utilities {
+  /* Landing-only refinement: retain the palette without atmospheric effects. */
+  .landing-page {
+    --muted-foreground: 148 8% 72%;
+    --hero-overlay: hsl(var(--background) / 0.95);
+  }
+
+  .hero-dark-overlay {
+    background: var(--hero-overlay, hsl(var(--background) / 0.95));
+  }
+
+  .landing-page .glow-text {
+    text-shadow: none;
+  }
+
+  .landing-page .glow-primary,
+  .landing-page .glow-border {
+    box-shadow: none;
+  }
+
+  .landing-page .glass-panel {
+    background: hsl(var(--card));
+    backdrop-filter: none;
+    border-color: hsl(var(--border));
+  }
+
+  .landing-page nav {
+    background: hsl(var(--background) / 0.96);
+    backdrop-filter: blur(8px);
+    box-shadow: none;
+  }
+
+  .landing-page nav a[aria-label] > div:first-child {
+    box-shadow: none;
+  }
+
+  .landing-page .gradient-mesh {
+    background: none;
+  }
+
   .safe-top {
     padding-top: env(safe-area-inset-top, 0px);
   }

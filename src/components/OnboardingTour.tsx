@@ -138,7 +138,7 @@ const OnboardingTour = () => {
         className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-background/90 backdrop-blur-md" />
+        <div className="absolute inset-0 bg-background/90" />
 
         {/* Grid overlay */}
         <div
@@ -167,7 +167,7 @@ const OnboardingTour = () => {
           </button>
 
           {/* Card */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-2xl shadow-primary/5">
+          <div className="rounded-2xl border border-border bg-card overflow-hidden">
             {/* Top accent bar */}
             <div className="h-1 bg-gradient-to-r from-primary via-accent to-primary" />
 

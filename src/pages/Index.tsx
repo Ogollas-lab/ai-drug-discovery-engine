@@ -9,7 +9,7 @@ import OnboardingTour from "@/components/OnboardingTour";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="landing-page min-h-screen bg-background">
       <OnboardingTour />
       <Navbar />
       <HeroSection />
