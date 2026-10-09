@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      compounds: {
+        Row: {
+          created_at: string
+          drug_class: string | null
+          hba: number | null
+          hbd: number | null
+          id: string
+          indication: string | null
+          molecular_formula: string | null
+          molecular_weight: number | null
+          name: string
+          pubchem_cid: number | null
+          rotatable_bonds: number | null
+          smiles: string
+          source: string
+          synonyms: string[]
+          tpsa: number | null
+          xlogp: number | null
+        }
+        Insert: {
+          created_at?: string
+          drug_class?: string | null
+          hba?: number | null
+          hbd?: number | null
+          id?: string
+          indication?: string | null
+          molecular_formula?: string | null
+          molecular_weight?: number | null
+          name: string
+          pubchem_cid?: number | null
+          rotatable_bonds?: number | null
+          smiles: string
+          source?: string
+          synonyms?: string[]
+          tpsa?: number | null
+          xlogp?: number | null
+        }
+        Update: {
+          created_at?: string
+          drug_class?: string | null
+          hba?: number | null
+          hbd?: number | null
+          id?: string
+          indication?: string | null
+          molecular_formula?: string | null
+          molecular_weight?: number | null
+          name?: string
+          pubchem_cid?: number | null
+          rotatable_bonds?: number | null
+          smiles?: string
+          source?: string
+          synonyms?: string[]
+          tpsa?: number | null
+          xlogp?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
