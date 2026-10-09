@@ -17,7 +17,7 @@ const HeroSection = () => {
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
-          backgroundImage: `linear-gradient(hsl(357 78% 52% / 0.35) 1px, transparent 1px), linear-gradient(90deg, hsl(357 78% 52% / 0.35) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(hsl(156 72% 67% / 0.35) 1px, transparent 1px), linear-gradient(90deg, hsl(156 72% 67% / 0.35) 1px, transparent 1px)`,
           backgroundSize: "60px 60px",
         }}
       />
