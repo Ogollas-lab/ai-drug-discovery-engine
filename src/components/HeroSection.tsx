@@ -9,18 +9,9 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-[85vh] sm:min-h-[90vh] flex items-center justify-center overflow-hidden pt-20 pb-12">
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-25" />
-        <div className="absolute inset-0 bg-background/75" />
-        <div className="absolute inset-0 gradient-mesh" />
+        <img src={heroBg} alt="" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 hero-dark-overlay" />
       </div>
-
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `linear-gradient(hsl(156 72% 67% / 0.35) 1px, transparent 1px), linear-gradient(90deg, hsl(156 72% 67% / 0.35) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
-        }}
-      />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
         <motion.div
@@ -50,7 +41,7 @@ const HeroSection = () => {
         >
           <span className="text-foreground">Accelerate</span>
           <br />
-          <span className="text-primary glow-text">Drug Discovery</span>
+          <span className="text-primary">Drug Discovery</span>
           <br />
           <span className="text-foreground text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
             with Vitalis
@@ -76,14 +67,14 @@ const HeroSection = () => {
           className="flex flex-col xs:flex-row flex-wrap justify-center gap-3 sm:gap-4 mb-10 sm:mb-12"
         >
           <Link to="/workspace" className="w-full xs:w-auto">
-            <Button className="w-full xs:w-auto bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-5 min-h-[48px] text-sm font-display font-semibold glow-primary">
+            <Button className="w-full xs:w-auto bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-5 min-h-[48px] text-sm font-display font-semibold transition-colors">
               Launch Workspace
             </Button>
           </Link>
           <Link to="/education" className="w-full xs:w-auto">
             <Button
               variant="outline"
-              className="w-full xs:w-auto border-primary/30 text-primary hover:bg-primary/10 px-6 py-5 min-h-[48px] text-sm font-display font-semibold"
+              className="w-full xs:w-auto bg-background border-primary/60 text-primary hover:bg-secondary px-6 py-5 min-h-[48px] text-sm font-display font-semibold transition-colors"
             >
               Education Mode
             </Button>
