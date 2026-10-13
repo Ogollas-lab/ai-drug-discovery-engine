@@ -3,6 +3,7 @@
  * Streams SSE events compatible with the existing src/lib/chat-api.ts client.
  * Uses Lovable AI Gateway by default; falls back to NVIDIA NIM if NVIDIA_API_KEY is set.
  */
+import { describe, fetchAndStore, findCompoundsInText } from "./compounds.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -219,29 +220,39 @@ Deno.serve(async (req) => {
         send({ type: "status", data: { status: "analyzing" } });
 
         const lastUser = [...messages].reverse().find((m) => m.role === "user");
-        const detected = lastUser ? detectSmiles(lastUser.content) : null;
+        const text = lastUser?.content ?? "";
+
+        // 1. Search the compound database for every compound mentioned
+        send({ type: "tool_start", data: { tool: "search_compounds", input: { query: text.slice(0, 120) } } });
+        let matches = await findCompoundsInText(text);
+        const rawSmiles = detectSmiles(text);
+        if (matches.length === 0 && rawSmiles && !KNOWN[rawSmiles.name?.toLowerCase() ?? ""]) {
+          const c = await fetchAndStore("smiles", rawSmiles.smiles);
+          if (c) matches = [c];
+        }
+        if (matches.length === 0) {
+          // try unknown drug-like words on PubChem (e.g. "tell me about tafenoquine")
+          const m = text.match(/\b(?:about|is|of|compare|analy[sz]e)\s+([a-z][a-z\-]{4,30})\b/i);
+          if (m) {
+            const c = await fetchAndStore("name", m[1].toLowerCase());
+            if (c) matches = [c];
+          }
+        }
+        matches = matches.slice(0, 6);
+        send({
+          type: "tool_result",
+          data: { tool: "search_compounds", output: { count: matches.length, compounds: matches.map((c) => ({ name: c.name, cid: c.pubchem_cid })) } },
+        });
 
         let analysisContext = "";
-        if (detected) {
-          send({
-            type: "tool_start",
-            data: { tool: "analyze_molecule", input: { smiles: detected.smiles } },
-          });
-          const result = await pubchemAnalyze(detected.smiles, detected.name);
+        if (matches.length > 0) {
+          analysisContext = `\n\n[Compound database records — EXPERIMENTAL values from PubChem; use these exact numbers${matches.length > 1 ? ", and present a comparison table" : ""}]\n` +
+            matches.map(describe).join("\n");
+          const first = matches[0];
+          send({ type: "tool_start", data: { tool: "analyze_molecule", input: { smiles: first.smiles } } });
+          const result = await pubchemAnalyze(first.smiles, first.name);
+          if (result.success && result.analysis) result.analysis.name = first.name;
           send({ type: "tool_result", data: { tool: "analyze_molecule", output: result } });
-          if (result.success && result.analysis) {
-            const a = result.analysis;
-            analysisContext = `\n\n[PubChem analysis context for response]
-Compound: ${a.name}
-SMILES: ${a.smiles}
-MW: ${a.descriptors.molecularWeight} Da
-LogP: ${a.descriptors.logP}
-H-bond donors/acceptors: ${a.descriptors.hBondDonors}/${a.descriptors.hBondAcceptors}
-TPSA: ${a.descriptors.tpsa}
-Lipinski: ${a.rules.lipinski.status}
-QED proxy: ${a.scientific.qed.value}
-Heuristic engagement: ${a.engagement.value}`;
-          }
         }
 
         const llmMessages: ChatMsg[] = [
