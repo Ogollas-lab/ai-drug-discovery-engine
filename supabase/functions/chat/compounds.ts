@@ -46,7 +46,7 @@ export async function findCompoundsInText(text: string): Promise<Compound[]> {
 const PROPS = "MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,SMILES,ConnectivitySMILES";
 
 /** Look up an unknown name/CID/SMILES on PubChem and save it to the database. */
-export async function fetchAndStore(kind: "name" | "cid" | "smiles", value: string): Promise<Compound | null> {
+export async function fetchAndStore(kind: "name" | "cid" | "smiles", value: string, store = true): Promise<Compound | null> {
   try {
     const res = await fetch(
       `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/${kind}/${encodeURIComponent(value)}/property/${PROPS}/JSON`,
@@ -75,8 +75,7 @@ export async function fetchAndStore(kind: "name" | "cid" | "smiles", value: stri
       drug_class: null,
       indication: null,
     };
-    await db().from("compounds").upsert({ ...row, source: "pubchem-on-demand" }, { onConflict: "pubchem_cid" });
-    cache = null;
+    if (store) await saveCompound(row);
     return row;
   } catch {
     return null;
@@ -96,4 +95,10 @@ export function describe(c: Compound) {
   return `- ${c.name} (CID ${c.pubchem_cid}${c.drug_class ? `, ${c.drug_class}` : ""}${c.indication ? `, used for ${c.indication}` : ""}): ` +
     `formula ${c.molecular_formula}, MW ${c.molecular_weight} Da, XLogP ${c.xlogp}, HBD ${c.hbd}, HBA ${c.hba}, ` +
     `rotatable bonds ${c.rotatable_bonds}, TPSA ${c.tpsa}, Lipinski ${lipinski(c)}, SMILES ${c.smiles}`;
+}
+
+export async function saveCompound(row: Compound) {
+  const { error } = await db().from("compounds").upsert({ ...row, source: "pubchem-user-saved" }, { onConflict: "pubchem_cid" });
+  cache = null;
+  return !error;
 }

@@ -3,7 +3,7 @@
  * Streams SSE events compatible with the existing src/lib/chat-api.ts client.
  * Uses Lovable AI Gateway by default; falls back to NVIDIA NIM if NVIDIA_API_KEY is set.
  */
-import { describe, fetchAndStore, findCompoundsInText } from "./compounds.ts";
+import { describe, fetchAndStore, findCompoundsInText, saveCompound } from "./compounds.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  let body: { messages?: ChatMsg[] };
+  let body: { messages?: ChatMsg[]; action?: string; cid?: number };
   try {
     body = await req.json();
   } catch {
@@ -200,6 +200,15 @@ Deno.serve(async (req) => {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+  if (body.action === "save_compound") {
+    const cid = Number(body.cid);
+    if (!Number.isInteger(cid) || cid <= 0) {
+      return new Response(JSON.stringify({ error: "valid cid required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const c = await fetchAndStore("cid", String(cid), false);
+    const ok = c ? await saveCompound(c) : false;
+    return new Response(JSON.stringify({ saved: ok, name: c?.name }), { status: ok ? 200 : 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
   const messages = body.messages ?? [];
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -225,16 +234,17 @@ Deno.serve(async (req) => {
         // 1. Search the compound database for every compound mentioned
         send({ type: "tool_start", data: { tool: "search_compounds", input: { query: text.slice(0, 120) } } });
         let matches = await findCompoundsInText(text);
+        const inDb = matches.length > 0;
         const rawSmiles = detectSmiles(text);
         if (matches.length === 0 && rawSmiles && !KNOWN[rawSmiles.name?.toLowerCase() ?? ""]) {
-          const c = await fetchAndStore("smiles", rawSmiles.smiles);
+          const c = await fetchAndStore("smiles", rawSmiles.smiles, false);
           if (c) matches = [c];
         }
         if (matches.length === 0) {
           // try unknown drug-like words on PubChem (e.g. "tell me about tafenoquine")
           const m = text.match(/\b(?:about|is|of|compare|analy[sz]e)\s+([a-z][a-z\-]{4,30})\b/i);
           if (m) {
-            const c = await fetchAndStore("name", m[1].toLowerCase());
+            const c = await fetchAndStore("name", m[1].toLowerCase(), false);
             if (c) matches = [c];
           }
         }
@@ -251,7 +261,12 @@ Deno.serve(async (req) => {
           const first = matches[0];
           send({ type: "tool_start", data: { tool: "analyze_molecule", input: { smiles: first.smiles } } });
           const result = await pubchemAnalyze(first.smiles, first.name);
-          if (result.success && result.analysis) result.analysis.name = first.name;
+          if (result.success && result.analysis) {
+            result.analysis.name = first.name;
+            (result.analysis as Record<string, unknown>).inDatabase = inDb;
+            (result.analysis as Record<string, unknown>).compound = first;
+            if (!result.analysis.descriptors.pubchemCid) result.analysis.descriptors.pubchemCid = first.pubchem_cid ?? undefined;
+          }
           send({ type: "tool_result", data: { tool: "analyze_molecule", output: result } });
         }
 
