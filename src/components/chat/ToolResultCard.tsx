@@ -1,5 +1,6 @@
 import { FlaskConical, Shield, Atom, Sparkles, Play, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MoleculeViewer } from "@/components/chat/MoleculeViewer";
 import type { ToolEvent } from "@/lib/chat-api";
 
 interface ToolCardProps {
@@ -46,7 +47,7 @@ function formatToolName(name: string) {
 function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
   const parsed = data as { success?: boolean; analysis?: {
     name: string; smiles: string;
-    descriptors: Record<string, number>;
+    descriptors: Record<string, number> & { pubchemCid?: number };
     scientific?: { qed?: { value: number }; herg?: { risk: string } };
     engagement?: { value: number; label: string; disclaimer: string };
     rules?: { lipinski?: { status: string } };
