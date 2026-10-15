@@ -181,6 +181,9 @@ export default function Chat() {
 
   const stop = () => abortRef.current?.abort();
 
+  // Live 2D structure preview when the input contains a SMILES string.
+  const previewSmiles = detectSmilesInText(input);
+
   const newChat = () => {
     stop();
     setMessages([]);
