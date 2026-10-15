@@ -65,6 +65,9 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
         </span>
       </div>
       <p className="text-[10px] font-mono text-muted-foreground break-all">{a.smiles}</p>
+      <div className="flex justify-center">
+        <MoleculeViewer cid={a.descriptors?.pubchemCid} smiles={a.smiles} name={a.name} size={200} />
+      </div>
       <div className="grid grid-cols-2 xs:grid-cols-4 gap-2">
         <Metric label="MW" value={`${a.descriptors?.molecularWeight?.toFixed?.(1) ?? '—'} Da`} />
         <Metric label="LogP" value={String(a.descriptors?.logP ?? '—')} />
