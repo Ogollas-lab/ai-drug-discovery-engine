@@ -96,3 +96,13 @@ export const STARTER_PROMPTS = [
   { label: 'Find safer analogs', prompt: 'Optimize CC(=O)Oc1ccccc1C(=O)O for better drug-likeness using MolMIM.' },
   { label: 'Full discovery run', prompt: 'Start a full discovery workflow for ibuprofen CC(C)Cc1ccccc1C(C)C(=O)O targeting inflammation.' },
 ];
+
+export async function saveCompoundToDatabase(cid: number): Promise<{ saved: boolean; name?: string }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (SUPABASE_PUBLISHABLE_KEY) {
+    headers.Authorization = `Bearer ${SUPABASE_PUBLISHABLE_KEY}`;
+    headers.apikey = SUPABASE_PUBLISHABLE_KEY;
+  }
+  const res = await fetch(CHAT_URL, { method: "POST", headers, body: JSON.stringify({ action: "save_compound", cid }) });
+  return res.json().catch(() => ({ saved: false }));
+}

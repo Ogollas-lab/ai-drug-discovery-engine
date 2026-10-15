@@ -1,7 +1,8 @@
-import { FlaskConical, Shield, Atom, Sparkles, Play, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { FlaskConical, Shield, Atom, Sparkles, Play, Loader2, Database, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MoleculeViewer } from "@/components/chat/MoleculeViewer";
-import type { ToolEvent } from "@/lib/chat-api";
+import { saveCompoundToDatabase, type ToolEvent } from "@/lib/chat-api";
 
 interface ToolCardProps {
   event: ToolEvent;
@@ -51,9 +52,20 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
     scientific?: { qed?: { value: number }; herg?: { risk: string } };
     engagement?: { value: number; label: string; disclaimer: string };
     rules?: { lipinski?: { status: string } };
+    inDatabase?: boolean;
+    compound?: { drug_class?: string | null; indication?: string | null };
   }};
   const a = parsed.analysis;
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>(a?.inDatabase ? 'saved' : 'idle');
   if (!a) return null;
+  const d = a.descriptors ?? {};
+  const cid = d.pubchemCid;
+  const save = async () => {
+    if (!cid) return;
+    setSaveState('saving');
+    const r = await saveCompoundToDatabase(cid).catch(() => ({ saved: false }));
+    setSaveState(r.saved ? 'saved' : 'error');
+  };
 
   return (
     <div className="rounded-2xl border border-border/60 glass-panel p-4 space-y-3">
@@ -64,6 +76,9 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
           PubChem
         </span>
       </div>
+      {(a.compound?.drug_class || a.compound?.indication) && (
+        <p className="text-xs text-muted-foreground">{[a.compound?.drug_class, a.compound?.indication].filter(Boolean).join(' · ')}</p>
+      )}
       <p className="text-[10px] font-mono text-muted-foreground break-all">{a.smiles}</p>
       <div className="flex justify-center">
         <MoleculeViewer cid={a.descriptors?.pubchemCid} smiles={a.smiles} name={a.name} size={200} />
@@ -73,7 +88,26 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
         <Metric label="LogP" value={String(a.descriptors?.logP ?? '—')} />
         <Metric label="QED" value={a.scientific?.qed?.value?.toFixed(3) ?? '—'} />
         <Metric label="Lipinski" value={a.rules?.lipinski?.status ?? '—'} />
+        <Metric label="Formula" value={String((d as Record<string, unknown>).molecularFormula ?? '—')} />
+        <Metric label="H-donors" value={String(d.hBondDonors ?? '—')} />
+        <Metric label="H-acceptors" value={String(d.hBondAcceptors ?? '—')} />
+        <Metric label="TPSA" value={d.tpsa != null ? `${d.tpsa} Å²` : '—'} />
+        <Metric label="Rot. bonds" value={String(d.rotatableBonds ?? '—')} />
+        <Metric label="CID" value={cid ? String(cid) : '—'} />
       </div>
+      {cid && (
+        <div className="flex items-center gap-2 pt-1">
+          {saveState === 'saved' ? (
+            <span className="flex items-center gap-1.5 text-xs text-primary"><Check className="w-3.5 h-3.5" /> In compound database</span>
+          ) : (
+            <Button size="sm" variant="outline" onClick={save} disabled={saveState === 'saving'} className="h-8 text-xs gap-1.5">
+              {saveState === 'saving' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Database className="w-3.5 h-3.5" />}
+              Save to database
+            </Button>
+          )}
+          {saveState === 'error' && <span className="text-xs text-destructive">Couldn't save — try again.</span>}
+        </div>
+      )}
       {a.engagement && (
         <div className="pt-2 border-t border-border/40">
           <div className="flex justify-between text-xs">
