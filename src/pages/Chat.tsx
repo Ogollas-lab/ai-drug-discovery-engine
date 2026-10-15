@@ -14,6 +14,7 @@ import {
 } from "@/lib/chat-api";
 import { friendlyChatError, CHAT_ERROR_MESSAGES } from "@/lib/chat-errors";
 import { ToolResultCard } from "@/components/chat/ToolResultCard";
+import { MoleculeViewer, detectSmilesInText } from "@/components/chat/MoleculeViewer";
 import BrandLogo from "@/components/BrandLogo";
 
 const STORAGE_KEY = "pawanax-chat-v1";
@@ -180,6 +181,9 @@ export default function Chat() {
 
   const stop = () => abortRef.current?.abort();
 
+  // Live 2D structure preview when the input contains a SMILES string.
+  const previewSmiles = detectSmilesInText(input);
+
   const newChat = () => {
     stop();
     setMessages([]);
@@ -304,6 +308,23 @@ export default function Chat() {
         </p>
 
         <div className="shrink-0 p-3 sm:p-4 border-t border-border/30 bg-background/80 backdrop-blur-xl">
+          <AnimatePresence>
+            {previewSmiles && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                className="max-w-3xl mx-auto mb-3 flex items-center gap-3 rounded-2xl border border-primary/25 bg-card/70 p-3"
+              >
+                <MoleculeViewer smiles={previewSmiles} size={110} />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-mono text-primary uppercase tracking-widest mb-1">Structure preview</p>
+                  <p className="text-[10px] font-mono text-muted-foreground break-all">{previewSmiles}</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">Send to analyze this molecule</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <form
             className="max-w-3xl mx-auto"
             onSubmit={(e) => { e.preventDefault(); sendMessage(input); }}

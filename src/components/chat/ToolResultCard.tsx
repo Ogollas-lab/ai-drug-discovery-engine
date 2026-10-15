@@ -1,5 +1,6 @@
 import { FlaskConical, Shield, Atom, Sparkles, Play, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MoleculeViewer } from "@/components/chat/MoleculeViewer";
 import type { ToolEvent } from "@/lib/chat-api";
 
 interface ToolCardProps {
@@ -46,7 +47,7 @@ function formatToolName(name: string) {
 function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
   const parsed = data as { success?: boolean; analysis?: {
     name: string; smiles: string;
-    descriptors: Record<string, number>;
+    descriptors: Record<string, number> & { pubchemCid?: number };
     scientific?: { qed?: { value: number }; herg?: { risk: string } };
     engagement?: { value: number; label: string; disclaimer: string };
     rules?: { lipinski?: { status: string } };
@@ -64,6 +65,9 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
         </span>
       </div>
       <p className="text-[10px] font-mono text-muted-foreground break-all">{a.smiles}</p>
+      <div className="flex justify-center">
+        <MoleculeViewer cid={a.descriptors?.pubchemCid} smiles={a.smiles} name={a.name} size={200} />
+      </div>
       <div className="grid grid-cols-2 xs:grid-cols-4 gap-2">
         <Metric label="MW" value={`${a.descriptors?.molecularWeight?.toFixed?.(1) ?? '—'} Da`} />
         <Metric label="LogP" value={String(a.descriptors?.logP ?? '—')} />
