@@ -14,6 +14,7 @@ import {
 } from "@/lib/chat-api";
 import { friendlyChatError, CHAT_ERROR_MESSAGES } from "@/lib/chat-errors";
 import { ToolResultCard } from "@/components/chat/ToolResultCard";
+import { MoleculeViewer, detectSmilesInText } from "@/components/chat/MoleculeViewer";
 import BrandLogo from "@/components/BrandLogo";
 
 const STORAGE_KEY = "pawanax-chat-v1";
