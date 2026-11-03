@@ -395,11 +395,11 @@ const Classroom = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-20 pb-16 px-6">
+      <div className="pt-20 pb-16 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
               <Link to="/">
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
@@ -421,8 +421,8 @@ const Classroom = () => {
           {/* ── Create Session Modal ── */}
           <AnimatePresence>
             {showCreate && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-panel rounded-xl p-6 w-full max-w-lg border border-border glow-border">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="glass-panel rounded-xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto border border-border glow-border">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="font-display font-bold text-lg">Create New Session</h2>
                     <Button variant="ghost" size="icon" onClick={() => setShowCreate(false)}><X className="w-4 h-4" /></Button>
@@ -468,11 +468,11 @@ const Classroom = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="glass-panel rounded-xl p-5 glow-border hover:border-primary/30 transition-all"
+                className="glass-panel rounded-xl p-4 sm:p-5 glow-border hover:border-primary/30 transition-all"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
                       <h3 className="font-display font-semibold text-sm">{session.name}</h3>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
                         session.status === "active"
@@ -494,7 +494,7 @@ const Classroom = () => {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span className="font-mono">{session.date}</span>
                       <span>Scenario: {session.scenario}</span>
                       <span className="flex items-center gap-1">
@@ -507,7 +507,7 @@ const Classroom = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex flex-wrap gap-2 items-center">
                     {session.status === "active" && (
                       <>
                         {session.simulating ? (
