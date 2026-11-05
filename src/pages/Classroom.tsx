@@ -157,6 +157,9 @@ const Classroom = () => {
   const compoundIndexRef = useRef<Map<string, number>>(new Map());
   // Store scenarioId per session so the interval closure never goes stale
   const scenarioIdRef = useRef<Map<string, string>>(new Map());
+  // Track compounds that failed to resolve on PubChem so we never retry the
+  // same broken structure on subsequent simulation cycles
+  const failedCompoundsRef = useRef<Map<string, Set<string>>>(new Map());
 
   // Keep activeSession in sync with sessions state
   useEffect(() => {
@@ -168,7 +171,14 @@ const Classroom = () => {
 
   /* ── Fetch real PubChem data for a compound and add as student submission ── */
   const addRealSubmission = useCallback(async (sessionId: string, scenarioId: string) => {
-    const scenarioCompounds = COMPOUND_POOL.filter(c => c.scenarioTags.includes(scenarioId));
+    const failed = failedCompoundsRef.current.get(sessionId) ?? new Set<string>();
+    let scenarioCompounds = COMPOUND_POOL.filter(c => c.scenarioTags.includes(scenarioId) && !failed.has(c.smiles));
+    if (scenarioCompounds.length === 0) {
+      // Every compound in this scenario has failed once this session — allow
+      // a fresh retry round instead of stalling the simulation forever
+      failedCompoundsRef.current.set(sessionId, new Set());
+      scenarioCompounds = COMPOUND_POOL.filter(c => c.scenarioTags.includes(scenarioId));
+    }
     if (scenarioCompounds.length === 0) return;
 
     const idx = compoundIndexRef.current.get(sessionId) ?? 0;
@@ -188,13 +198,15 @@ const Classroom = () => {
       ]);
 
       if (!result) {
+        // PubChem couldn't resolve this structure. Do NOT roll back the
+        // compound index — skipping past it keeps the simulation running;
+        // rolling back would retry the same broken SMILES forever.
+        failed.add(compound.smiles);
+        failedCompoundsRef.current.set(sessionId, failed);
         setPubchemErrors(prev => ({
           ...prev,
-          [sessionId]: `PubChem fetch failed for ${compound.smiles.slice(0, 20)}… — retrying next cycle`,
+          [sessionId]: `Couldn't load ${compound.smiles.slice(0, 20)}… from PubChem — skipping it and fetching the next compound`,
         }));
-        // Roll back the indices so the same compound is retried next cycle
-        compoundIndexRef.current.set(sessionId, idx);
-        studentIndexRef.current.set(sessionId, studentIdx);
         return;
       }
 
