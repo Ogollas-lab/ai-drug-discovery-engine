@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import FooterSection from "@/components/FooterSection";
 import { fetchPubChemBySMILES, fetchPubChemName } from "@/lib/pubchem";
+import { COMPOUND_POOL, pickScenarioCompound } from "@/lib/classroom-compounds";
 
 /* ── Types ── */
 interface StudentWork {
@@ -58,35 +59,6 @@ const SCENARIOS = [
   { id: "qt", label: "Avoid QT Prolongation", description: "Modify a lead compound to reduce hERG channel liability" },
   { id: "cns", label: "Brain-Penetrant Drug", description: "Tune lipophilicity and PSA to cross the blood–brain barrier" },
   { id: "antibiotic", label: "Novel Antibiotic Scaffold", description: "Explore modifications to overcome bacterial resistance" },
-];
-
-/* ── Real compounds pool fetched from PubChem ── */
-const COMPOUND_POOL: { smiles: string; scenarioTags: string[] }[] = [
-  // NSAIDs & analgesics
-  { smiles: "CC(=O)Oc1ccccc1C(=O)O", scenarioTags: ["nsaid"] },                    // Aspirin
-  { smiles: "CC(C)Cc1ccc(cc1)[C@@H](C)C(=O)O", scenarioTags: ["nsaid"] },           // Ibuprofen
-  { smiles: "OC(=O)Cc1ccccc1Nc1c(Cl)cccc1Cl", scenarioTags: ["nsaid"] },            // Diclofenac
-  { smiles: "Cc1ccc(cc1)S(=O)(=O)NC(=O)c1cc2ccccc2o1", scenarioTags: ["nsaid"] },   // Celecoxib-like
-  { smiles: "OC(=O)c1ccccc1O", scenarioTags: ["nsaid"] },                           // Salicylic acid
-  // Cardiac / hERG
-  { smiles: "CCOc1ccc(cc1)C(=O)c1ccc(cc1)OCC", scenarioTags: ["qt"] },              // Amiodarone-like
-  { smiles: "O=C1CN=C(c2ccccc2)c2cc(Cl)ccc2N1", scenarioTags: ["qt"] },             // Chlordiazepoxide
-  { smiles: "Fc1ccc(cc1)C1CCNCC1COc1ccc2[nH]cc(c2c1)C#N", scenarioTags: ["qt"] },   // hERG-relevant
-  { smiles: "CC(=O)Nc1ccc(O)cc1", scenarioTags: ["qt"] },                           // Acetaminophen
-  { smiles: "OC(=O)CCc1ccc(cc1)N(CCCl)CCCl", scenarioTags: ["qt"] },                // Chlorambucil
-  { smiles: "CC(C)(C)C1=CC=C(C=C1)C(CCCN2CCC(CC2)C(C3=CC=CC=C3)(C4=CC=CC=C4)O)O", scenarioTags: ["qt"] }, // Terfenadine (hERG blocker)
-  // CNS / BBB
-  { smiles: "CN1C=NC2=C1C(=O)N(C(=O)N2C)C", scenarioTags: ["cns"] },               // Caffeine
-  { smiles: "c1ccc2c(c1)[nH]c1ccccc12", scenarioTags: ["cns"] },                     // Carbazole
-  { smiles: "CN(C)CCCN1c2ccccc2Sc2ccc(Cl)cc21", scenarioTags: ["cns"] },            // Chlorpromazine
-  { smiles: "CNCCC(Oc1ccc(cc1)C(F)(F)F)c1ccccc1", scenarioTags: ["cns"] },          // Fluoxetine
-  { smiles: "c1cc(ccc1C(=O)CCCN1CCC(CC1)(c1ccc(F)cc1)O)F", scenarioTags: ["cns"] }, // Haloperidol
-  // Antibiotics
-  { smiles: "CC1(C)SC2C(NC(=O)Cc3ccccc3)C(=O)N2C1C(=O)O", scenarioTags: ["antibiotic"] }, // Penicillin G
-  { smiles: "Nc1ccc(cc1)S(=O)(=O)Nc1ccccn1", scenarioTags: ["antibiotic"] },         // Sulfapyridine
-  { smiles: "OC(=O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O", scenarioTags: ["antibiotic"] }, // Ciprofloxacin
-  { smiles: "ClC(Cl)(Cl)C(c1ccc(Cl)cc1)c1ccc(Cl)cc1", scenarioTags: ["antibiotic"] }, // DDT (toxic control)
-  { smiles: "CC1(C)S[C@@H]2[C@H](NC(=O)[C@@H](N)c3ccc(O)cc3)C(=O)N2[C@@H]1C(=O)O", scenarioTags: ["antibiotic"] }, // Amoxicillin
 ];
 
 const STUDENT_NAMES = [
@@ -171,14 +143,16 @@ const Classroom = () => {
 
   /* ── Fetch real PubChem data for a compound and add as student submission ── */
   const addRealSubmission = useCallback(async (sessionId: string, scenarioId: string) => {
-    const failed = failedCompoundsRef.current.get(sessionId) ?? new Set<string>();
-    let scenarioCompounds = COMPOUND_POOL.filter(c => c.scenarioTags.includes(scenarioId) && !failed.has(c.smiles));
-    if (scenarioCompounds.length === 0) {
+    const failedRef = failedCompoundsRef.current;
+    let failed = failedRef.get(sessionId) ?? new Set<string>();
+    const picked = pickScenarioCompound(COMPOUND_POOL, scenarioId, failed);
+    if (picked.reset) {
       // Every compound in this scenario has failed once this session — allow
       // a fresh retry round instead of stalling the simulation forever
-      failedCompoundsRef.current.set(sessionId, new Set());
-      scenarioCompounds = COMPOUND_POOL.filter(c => c.scenarioTags.includes(scenarioId));
+      failed = new Set<string>();
+      failedRef.set(sessionId, failed);
     }
+    const scenarioCompounds = picked.candidates;
     if (scenarioCompounds.length === 0) return;
 
     const idx = compoundIndexRef.current.get(sessionId) ?? 0;
