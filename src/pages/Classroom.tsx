@@ -74,6 +74,7 @@ const COMPOUND_POOL: { smiles: string; scenarioTags: string[] }[] = [
   { smiles: "Fc1ccc(cc1)C1CCNCC1COc1ccc2[nH]cc(c2c1)C#N", scenarioTags: ["qt"] },   // hERG-relevant
   { smiles: "CC(=O)Nc1ccc(O)cc1", scenarioTags: ["qt"] },                           // Acetaminophen
   { smiles: "OC(=O)CCc1ccc(cc1)N(CCCl)CCCl", scenarioTags: ["qt"] },                // Chlorambucil
+  { smiles: "CC(C)(C)C1=CC=C(C=C1)C(CCCN2CCC(CC2)C(C3=CC=CC=C3)(C4=CC=CC=C4)O)O", scenarioTags: ["qt"] }, // Terfenadine (hERG blocker)
   // CNS / BBB
   { smiles: "CN1C=NC2=C1C(=O)N(C(=O)N2C)C", scenarioTags: ["cns"] },               // Caffeine
   { smiles: "c1ccc2c(c1)[nH]c1ccccc12", scenarioTags: ["cns"] },                     // Carbazole
@@ -84,7 +85,7 @@ const COMPOUND_POOL: { smiles: string; scenarioTags: string[] }[] = [
   { smiles: "CC1(C)SC2C(NC(=O)Cc3ccccc3)C(=O)N2C1C(=O)O", scenarioTags: ["antibiotic"] }, // Penicillin G
   { smiles: "Nc1ccc(cc1)S(=O)(=O)Nc1ccccn1", scenarioTags: ["antibiotic"] },         // Sulfapyridine
   { smiles: "OC(=O)c1cn(C2CC2)c2cc(N3CCNCC3)c(F)cc2c1=O", scenarioTags: ["antibiotic"] }, // Ciprofloxacin
-  { smiles: "Clc1ccc(c1)C(c1ccc(Cl)cc1)C(Cl)(Cl)Cl", scenarioTags: ["antibiotic"] }, // DDT-like (toxic control)
+  { smiles: "ClC(Cl)(Cl)C(c1ccc(Cl)cc1)c1ccc(Cl)cc1", scenarioTags: ["antibiotic"] }, // DDT (toxic control)
   { smiles: "CC1(C)S[C@@H]2[C@H](NC(=O)[C@@H](N)c3ccc(O)cc3)C(=O)N2[C@@H]1C(=O)O", scenarioTags: ["antibiotic"] }, // Amoxicillin
 ];
 
