@@ -2,6 +2,34 @@ import { classifyMoleculeInput, normalizeSMILES, isPubChemCID } from "./smiles-v
 
 const BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug";
 
+/** Statuses that are transient (rate limiting / server hiccups) and worth retrying. */
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
+/**
+ * Fetch with bounded retries and short backoff for transient PubChem failures
+ * (HTTP 429/5xx) and network errors, so one hiccup never kills a lookup.
+ */
+async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (RETRYABLE_STATUS.has(response.status) && attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+        continue;
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+        continue;
+      }
+    }
+  }
+  throw lastError ?? new Error("fetch failed after retries");
+}
+
 export interface PubChemProperties {
   MolecularWeight: number;
   XLogP: number | null;
@@ -35,7 +63,7 @@ export async function fetchPubChemBySMILES(smiles: string): Promise<PubChemResul
     const encoded = encodeURIComponent(smiles);
     const propsUrl = `${BASE}/compound/smiles/${encoded}/property/MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,IUPACName/JSON`;
 
-    const response = await fetch(propsUrl);
+    const response = await fetchWithRetry(propsUrl);
     if (!response.ok) {
       console.warn(`PubChem lookup failed for SMILES: ${smiles.substring(0, 50)}... (HTTP ${response.status})`);
       return null;
@@ -198,7 +226,7 @@ export async function fetchPubChemByCID(cid: number): Promise<PubChemResult | nu
   try {
     const propsUrl = `${BASE}/compound/cid/${cid}/property/MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,IUPACName/JSON`;
 
-    const response = await fetch(propsUrl);
+    const response = await fetchWithRetry(propsUrl);
     if (!response.ok) {
       console.warn(`PubChem CID lookup failed: ${cid} (HTTP ${response.status})`);
       return null;
