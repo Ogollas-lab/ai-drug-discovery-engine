@@ -75,11 +75,10 @@ async function* streamChatWithAgent({ messages, traceId }) {
   const { HumanMessage, AIMessage, SystemMessage } = require('@langchain/core/messages');
 
   const agent = await createChatAgent();
-  const lcMessages = messages.map((m) => {
-    if (m.role === 'user') return new HumanMessage(m.content);
-    if (m.role === 'assistant') return new AIMessage(m.content);
-    return new SystemMessage(m.content);
-  });
+  // System instructions are server-owned; never convert request messages into SystemMessage.
+  const lcMessages = messages
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => m.role === 'assistant' ? new AIMessage(m.content) : new HumanMessage(m.content));
 
   log('info', 'chat_stream_start', { traceId, messageCount: messages.length });
   yield { type: 'status', data: { status: 'thinking', traceId } };

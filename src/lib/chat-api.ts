@@ -9,7 +9,7 @@ const SUPABASE_PUBLISHABLE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndkZHZ5ZmRmZ2NobWRrbXp3YnJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MDU3MDcsImV4cCI6MjA5ODM4MTcwN30.YnrLcIBsL3CLRph5jvWbKQlkAgwZm5RausFRYaAI-q4';
 const CHAT_URL = `${SUPABASE_URL}/functions/v1/chat`;
 
-export type ChatRole = 'user' | 'assistant' | 'system';
+export type ChatRole = 'user' | 'assistant';
 
 export interface ChatMessage {
   id: string;
