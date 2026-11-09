@@ -4,12 +4,29 @@
  * Uses Lovable AI Gateway by default; falls back to NVIDIA NIM if NVIDIA_API_KEY is set.
  */
 import { describe, fetchAndStore, findCompoundsInText, saveCompound } from "./compounds.ts";
+import { createRemoteJWKSet, jwtVerify } from "npm:jose@5.9.6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const neonJwksUrl = Deno.env.get("NEON_AUTH_JWKS_URL");
+const neonJwks = neonJwksUrl ? createRemoteJWKSet(new URL(neonJwksUrl)) : null;
+
+async function isAuthenticatedNeonUser(req: Request): Promise<boolean> {
+  const authorization = req.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ") || !neonJwks) return false;
+
+  try {
+    const { payload } = await jwtVerify(authorization.slice(7), neonJwks);
+    return typeof payload.sub === "string" && payload.sub.length > 0 &&
+      typeof payload.exp === "number" && payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
 
 
 interface ChatMsg {
@@ -205,6 +222,12 @@ Deno.serve(async (req) => {
     });
   }
   if (body.action === "save_compound") {
+    if (!(await isAuthenticatedNeonUser(req))) {
+      return new Response(JSON.stringify({ error: "Sign in is required to save compounds." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const cid = Number(body.cid);
     if (!Number.isInteger(cid) || cid <= 0) {
       return new Response(JSON.stringify({ error: "valid cid required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
