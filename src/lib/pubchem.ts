@@ -9,11 +9,14 @@ const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
  * Fetch with bounded retries and short backoff for transient PubChem failures
  * (HTTP 429/5xx) and network errors, so one hiccup never kills a lookup.
  */
-async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
+async function fetchWithRetry(url: string, retries = 2, init?: RequestInit): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(15_000),
+      });
       if (RETRYABLE_STATUS.has(response.status) && attempt < retries) {
         await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
         continue;
@@ -28,6 +31,18 @@ async function fetchWithRetry(url: string, retries = 2): Promise<Response> {
     }
   }
   throw lastError ?? new Error("fetch failed after retries");
+}
+
+/** PubChem accepts SMILES in form data, avoiding oversized/fragile URL paths. */
+export function makePubChemSmilesRequest(endpoint: string, smiles: string): { url: string; init: RequestInit } {
+  return {
+    url: `${BASE}/compound/smiles/${endpoint}`,
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ smiles }).toString(),
+    },
+  };
 }
 
 export interface PubChemProperties {
@@ -60,10 +75,12 @@ export interface PubChemResult {
  */
 export async function fetchPubChemBySMILES(smiles: string): Promise<PubChemResult | null> {
   try {
-    const encoded = encodeURIComponent(smiles);
-    const propsUrl = `${BASE}/compound/smiles/${encoded}/property/MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,IUPACName/JSON`;
+    const request = makePubChemSmilesRequest(
+      "property/MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,TPSA,MolecularFormula,IUPACName/JSON",
+      smiles,
+    );
 
-    const response = await fetchWithRetry(propsUrl);
+    const response = await fetchWithRetry(request.url, 2, request.init);
     if (!response.ok) {
       console.warn(`PubChem lookup failed for SMILES: ${smiles.substring(0, 50)}... (HTTP ${response.status})`);
       return null;
@@ -311,9 +328,8 @@ export async function fetchPubChemByName(name: string): Promise<PubChemResult | 
  */
 export async function fetchPubChemName(smiles: string): Promise<string | null> {
   try {
-    const encoded = encodeURIComponent(smiles);
-    const url = `${BASE}/compound/smiles/${encoded}/synonyms/JSON`;
-    const response = await fetch(url);
+    const request = makePubChemSmilesRequest("synonyms/JSON", smiles);
+    const response = await fetchWithRetry(request.url, 2, request.init);
     if (!response.ok) return null;
 
     const data = await response.json();
