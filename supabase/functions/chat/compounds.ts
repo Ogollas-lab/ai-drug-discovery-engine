@@ -98,7 +98,19 @@ export function describe(c: Compound) {
 }
 
 export async function saveCompound(row: Compound) {
-  const { error } = await db().from("compounds").upsert({ ...row, source: "pubchem-user-saved" }, { onConflict: "pubchem_cid" });
+  if (!Number.isInteger(row.pubchem_cid) || (row.pubchem_cid ?? 0) <= 0) return false;
+
+  const client = db();
+  const { data: existing, error: lookupError } = await client
+    .from("compounds")
+    .select("id")
+    .eq("pubchem_cid", row.pubchem_cid)
+    .maybeSingle();
+  if (lookupError) return false;
+  if (existing) return true;
+
+  // Add verified PubChem records only; never let a save request replace catalog data.
+  const { error } = await client.from("compounds").insert({ ...row, source: "pubchem-user-saved" });
   cache = null;
-  return !error;
+  return !error || error.code === "23505";
 }
