@@ -56,7 +56,7 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
     compound?: { drug_class?: string | null; indication?: string | null };
   }};
   const a = parsed.analysis;
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>(a?.inDatabase ? 'saved' : 'idle');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error' | 'auth'>(a?.inDatabase ? 'saved' : 'idle');
   if (!a) return null;
   const d = a.descriptors ?? {};
   const cid = d.pubchemCid;
@@ -64,7 +64,7 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
     if (!cid) return;
     setSaveState('saving');
     const r = await saveCompoundToDatabase(cid).catch(() => ({ saved: false }));
-    setSaveState(r.saved ? 'saved' : 'error');
+    setSaveState(r.saved ? 'saved' : r.requiresAuth ? 'auth' : 'error');
   };
 
   return (
@@ -106,6 +106,7 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
             </Button>
           )}
           {saveState === 'error' && <span className="text-xs text-destructive">Couldn't save — try again.</span>}
+          {saveState === 'auth' && <a href="/login" className="text-xs text-primary underline underline-offset-2">Sign in to save compounds</a>}
         </div>
       )}
       {a.engagement && (

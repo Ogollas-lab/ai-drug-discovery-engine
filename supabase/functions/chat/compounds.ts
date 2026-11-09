@@ -98,7 +98,17 @@ export function describe(c: Compound) {
 }
 
 export async function saveCompound(row: Compound) {
-  const { error } = await db().from("compounds").upsert({ ...row, source: "pubchem-user-saved" }, { onConflict: "pubchem_cid" });
+  const client = db();
+  const { data: existing, error: lookupError } = await client
+    .from("compounds")
+    .select("id")
+    .eq("pubchem_cid", row.pubchem_cid)
+    .maybeSingle();
+  if (existing) return true;
+  if (lookupError) return false;
+
+  // Never let a save request overwrite an existing reference compound.
+  const { error } = await client.from("compounds").insert({ ...row, source: "pubchem-user-saved" });
   cache = null;
-  return !error;
+  return !error || error.code === "23505";
 }
