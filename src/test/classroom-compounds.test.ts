@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { COMPOUND_POOL, pickScenarioCompound } from "@/lib/classroom-compounds";
+import { makePubChemSmilesRequest } from "@/lib/pubchem";
 
 describe("pickScenarioCompound", () => {
   it("skips compounds that already failed on PubChem instead of retrying them", () => {
@@ -34,5 +35,17 @@ describe("pickScenarioCompound", () => {
     const { candidates, reset } = pickScenarioCompound(COMPOUND_POOL, "nonexistent", new Set());
     expect(candidates).toHaveLength(0);
     expect(reset).toBe(false);
+  });
+});
+
+describe("PubChem SMILES requests", () => {
+  it("sends complex SMILES as form data instead of placing them in the URL", () => {
+    const smiles = "Clc1ccc(c1)C(c1ccc(Cl)cc1)C(Cl)(Cl)Cl";
+    const request = makePubChemSmilesRequest("property/MolecularFormula/JSON", smiles);
+
+    expect(request.init.method).toBe("POST");
+    expect(request.init.headers).toEqual({ "Content-Type": "application/x-www-form-urlencoded" });
+    expect(new URLSearchParams(request.init.body as string).get("smiles")).toBe(smiles);
+    expect(request.url).not.toContain(smiles);
   });
 });
