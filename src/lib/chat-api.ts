@@ -97,7 +97,7 @@ export const STARTER_PROMPTS = [
   { label: 'Full discovery run', prompt: 'Start a full discovery workflow for ibuprofen CC(C)Cc1ccccc1C(C)C(=O)O targeting inflammation.' },
 ];
 
-export async function saveCompoundToDatabase(cid: number): Promise<{ saved: boolean; name?: string }> {
+export async function saveCompoundToDatabase(cid: number): Promise<{ saved: boolean; name?: string; requiresAuth?: boolean }> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (SUPABASE_PUBLISHABLE_KEY) {
     const userToken = localStorage.getItem("token");
