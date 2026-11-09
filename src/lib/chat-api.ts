@@ -100,12 +100,9 @@ export const STARTER_PROMPTS = [
 export async function saveCompoundToDatabase(cid: number): Promise<{ saved: boolean; name?: string; requiresAuth?: boolean }> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (SUPABASE_PUBLISHABLE_KEY) {
-    const userToken = localStorage.getItem("token");
-    if (!userToken) return { saved: false, requiresAuth: true };
-    headers.Authorization = `Bearer ${userToken}`;
+    headers.Authorization = `Bearer ${SUPABASE_PUBLISHABLE_KEY}`;
     headers.apikey = SUPABASE_PUBLISHABLE_KEY;
   }
   const res = await fetch(CHAT_URL, { method: "POST", headers, body: JSON.stringify({ action: "save_compound", cid }) });
-  if (res.status === 401) return { saved: false, requiresAuth: true };
   return res.json().catch(() => ({ saved: false }));
 }
