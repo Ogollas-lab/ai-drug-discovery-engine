@@ -72,7 +72,7 @@ async function* streamChatHeuristic({ messages, traceId }) {
 }
 
 async function* streamChatWithAgent({ messages, traceId }) {
-  const { HumanMessage, AIMessage, SystemMessage } = require('@langchain/core/messages');
+  const { HumanMessage, AIMessage } = require('@langchain/core/messages');
 
   const agent = await createChatAgent();
   // System instructions are server-owned; never convert request messages into SystemMessage.

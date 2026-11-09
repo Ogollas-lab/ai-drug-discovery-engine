@@ -1,13 +1,14 @@
 import { type PredictionOutput } from "@/lib/drug-prediction";
 
 function escapeHtml(value: unknown): string {
-  return String(value).replace(/[&<>"']/g, (char) => ({
+  const entities: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;",
-  })[char]!);
+  };
+  return String(value).replace(/[&<>"']/g, (char) => entities[char]);
 }
 
 export function exportPredictionCSV(moleculeName: string, prediction: PredictionOutput) {
