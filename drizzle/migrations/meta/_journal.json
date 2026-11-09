@@ -8,6 +8,13 @@
       "when": 1791542762161,
       "tag": "0000_create_compounds",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794217464272,
+      "tag": "0001_restrict_compounds_to_chat_service",
+      "breakpoints": true
     }
   ]
 }
