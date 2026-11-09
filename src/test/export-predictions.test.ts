@@ -19,15 +19,23 @@ describe("prediction report export", () => {
 
   it("escapes molecule names before embedding them in the printable HTML", async () => {
     let captured: Blob | undefined;
-    vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
-      captured = blob as Blob;
-      return "blob:test-report";
+    vi.stubGlobal("URL", {
+      createObjectURL: (blob: Blob) => {
+        captured = blob;
+        return "blob:test-report";
+      },
+      revokeObjectURL: vi.fn(),
     });
     vi.spyOn(window, "open").mockReturnValue(null);
 
     exportPredictionPDF(`</strong><img src=x onerror=alert(1)>`, samplePrediction);
 
-    const html = await captured!.text();
+    const html = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(captured!);
+    });
     expect(html).toContain("&lt;/strong&gt;&lt;img src=x onerror=alert(1)&gt;");
     expect(html).not.toContain("</strong><img src=x onerror=alert(1)>");
   });
