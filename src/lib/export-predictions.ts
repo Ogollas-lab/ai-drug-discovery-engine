@@ -1,5 +1,16 @@
 import { type PredictionOutput } from "@/lib/drug-prediction";
 
+function escapeHtml(value: unknown): string {
+  const entities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return String(value).replace(/[&<>"']/g, (char) => entities[char]);
+}
+
 export function exportPredictionCSV(moleculeName: string, prediction: PredictionOutput) {
   const rows: string[][] = [
     ["Metric", "Value"],
@@ -37,7 +48,8 @@ export function exportPredictionCSV(moleculeName: string, prediction: Prediction
   ];
 
   const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
-  download(csv, `${moleculeName}_prediction.csv`, "text/csv");
+  const safeFilename = moleculeName.replace(/[^a-z0-9._-]/gi, "_").slice(0, 80) || "molecule";
+  download(csv, `${safeFilename}_prediction.csv`, "text/csv");
 }
 
 export function exportPredictionPDF(moleculeName: string, prediction: PredictionOutput) {
@@ -49,11 +61,11 @@ export function exportPredictionPDF(moleculeName: string, prediction: Prediction
   const featuresRows = prediction.featureContributions
     .map(
       (f) =>
-        `<tr><td>${f.feature}</td><td>${f.value}</td><td>${f.weight}</td><td style="color:${f.impact === "positive" ? "#10b981" : f.impact === "negative" ? "#ef4444" : "#a1a1aa"}">${f.impact}</td><td>${f.description}</td></tr>`
+        `<tr><td>${escapeHtml(f.feature)}</td><td>${escapeHtml(f.value)}</td><td>${escapeHtml(f.weight)}</td><td style="color:${f.impact === "positive" ? "#10b981" : f.impact === "negative" ? "#ef4444" : "#a1a1aa"}">${escapeHtml(f.impact)}</td><td>${escapeHtml(f.description)}</td></tr>`
     )
     .join("");
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${moleculeName} – Drug Prediction Report</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(moleculeName)} – Drug Prediction Report</title>
 <style>
   body{font-family:Arial,Helvetica,sans-serif;max-width:800px;margin:0 auto;padding:40px 24px;color:#1a1a1a;font-size:13px}
   h1{font-size:22px;margin-bottom:4px}
@@ -72,7 +84,7 @@ export function exportPredictionPDF(moleculeName: string, prediction: Prediction
   @media print{body{padding:20px}}
 </style></head><body>
 <h1>Drug Success Prediction Report</h1>
-<p style="color:#666">Molecule: <strong>${moleculeName}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()}</p>
+<p style="color:#666">Molecule: <strong>${escapeHtml(moleculeName)}</strong> &nbsp;|&nbsp; Generated: ${new Date().toLocaleDateString()}</p>
 
 <div class="scores">
   <div class="score-box"><div class="val">${prediction.overallScore}%</div><div class="lbl">Overall</div></div>
@@ -80,25 +92,25 @@ export function exportPredictionPDF(moleculeName: string, prediction: Prediction
   <div class="score-box"><div class="val">${prediction.safetyScore}%</div><div class="lbl">Safety</div></div>
   <div class="score-box"><div class="val">${prediction.confidence}%</div><div class="lbl">Confidence</div></div>
 </div>
-<p>Verdict: <span class="verdict">${prediction.verdict}</span></p>
+<p>Verdict: <span class="verdict">${escapeHtml(prediction.verdict)}</span></p>
 
 <h2>Feature Contributions</h2>
 <table><thead><tr><th>Feature</th><th>Value</th><th>Weight</th><th>Impact</th><th>Description</th></tr></thead><tbody>${featuresRows}</tbody></table>
 
 <h2>Risk Flags</h2>
-${prediction.riskFlags.length > 0 ? `<ul>${prediction.riskFlags.map((r) => `<li>${r}</li>`).join("")}</ul>` : "<p>No risk flags detected.</p>"}
+${prediction.riskFlags.length > 0 ? `<ul>${prediction.riskFlags.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>` : "<p>No risk flags detected.</p>"}
 
 <h2>Recommendations</h2>
-<ul>${prediction.recommendations.map((r) => `<li>${r}</li>`).join("")}</ul>
+<ul>${prediction.recommendations.map((r) => `<li>${escapeHtml(r)}</li>`).join("")}</ul>
 
 <h2>Model Metrics</h2>
 <table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>
-<tr><td>Accuracy</td><td>${prediction.modelMetrics.accuracy}</td></tr>
-<tr><td>Precision</td><td>${prediction.modelMetrics.precision}</td></tr>
-<tr><td>Recall</td><td>${prediction.modelMetrics.recall}</td></tr>
-<tr><td>F1 Score</td><td>${prediction.modelMetrics.f1Score}</td></tr>
-<tr><td>AUC-ROC</td><td>${prediction.modelMetrics.auc}</td></tr>
-<tr><td>Training Data Points</td><td>${prediction.modelMetrics.dataPoints.toLocaleString()}</td></tr>
+<tr><td>Accuracy</td><td>${escapeHtml(prediction.modelMetrics.accuracy)}</td></tr>
+<tr><td>Precision</td><td>${escapeHtml(prediction.modelMetrics.precision)}</td></tr>
+<tr><td>Recall</td><td>${escapeHtml(prediction.modelMetrics.recall)}</td></tr>
+<tr><td>F1 Score</td><td>${escapeHtml(prediction.modelMetrics.f1Score)}</td></tr>
+<tr><td>AUC-ROC</td><td>${escapeHtml(prediction.modelMetrics.auc)}</td></tr>
+<tr><td>Training Data Points</td><td>${escapeHtml(prediction.modelMetrics.dataPoints.toLocaleString())}</td></tr>
 </tbody></table>
 
 <p class="meta">Generated by Pawanax AI. Powered by PubChem data and Lipinski/Veber/ADMET scoring models.</p>

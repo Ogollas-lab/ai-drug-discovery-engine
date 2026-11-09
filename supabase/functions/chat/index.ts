@@ -11,10 +11,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+
 interface ChatMsg {
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant";
   content: string;
 }
+
+type LLMMessage = ChatMsg | { role: "system"; content: string };
 
 const SYSTEM_PROMPT = `You are Pawanax AI, the intelligence layer of the Vitalis Drug Engine.
 You help researchers and curious learners explore drug discovery in plain language.
@@ -123,7 +126,7 @@ async function pubchemAnalyze(smiles: string, fallbackName?: string) {
 }
 
 // ---------- LLM streaming ----------
-async function* streamLLM(messages: ChatMsg[]): AsyncGenerator<string> {
+async function* streamLLM(messages: LLMMessage[]): AsyncGenerator<string> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) {
     yield "[LOVABLE_API_KEY not configured.]";
@@ -192,7 +195,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  let body: { messages?: ChatMsg[]; action?: string; cid?: number };
+  let body: { messages?: unknown; action?: string; cid?: number };
   try {
     body = await req.json();
   } catch {
@@ -210,13 +213,25 @@ Deno.serve(async (req) => {
     const ok = c ? await saveCompound(c) : false;
     return new Response(JSON.stringify({ saved: ok, name: c?.name }), { status: ok ? 200 : 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
-  const messages = body.messages ?? [];
-  if (!Array.isArray(messages) || messages.length === 0) {
+  const rawMessages = body.messages;
+  if (
+    !Array.isArray(rawMessages) ||
+    rawMessages.length === 0 ||
+    rawMessages.length > 50 ||
+    !rawMessages.every((message) =>
+      message !== null &&
+      typeof message === "object" &&
+      ((message as Record<string, unknown>).role === "user" || (message as Record<string, unknown>).role === "assistant") &&
+      typeof (message as Record<string, unknown>).content === "string" &&
+      ((message as Record<string, unknown>).content as string).length <= 20000
+    )
+  ) {
     return new Response(JSON.stringify({ error: "messages array required" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  const messages = rawMessages as ChatMsg[];
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -272,7 +287,7 @@ Deno.serve(async (req) => {
 
         const llmMessages: ChatMsg[] = [
           { role: "system", content: SYSTEM_PROMPT + analysisContext },
-          ...messages,
+          ...messages.filter((message) => message.role === "user" || message.role === "assistant"),
         ];
 
         send({ type: "status", data: { status: "thinking" } });

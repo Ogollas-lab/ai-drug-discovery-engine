@@ -64,13 +64,13 @@ async function sendVerificationEmail(user, verificationToken) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Verification email sent to ${user.email}`);
+    console.log('✓ Verification email sent');
     return true;
   } catch (error) {
     console.error('Error sending verification email:', error);
     // In development, log to console
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DEV EMAIL] Verification link: ${verificationLink}`);
+      console.warn('[DEV EMAIL] Verification email was not sent; check mail service configuration');
     }
     return false;
   }
@@ -109,12 +109,12 @@ async function sendPasswordResetEmail(user, resetToken) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Password reset email sent to ${user.email}`);
+    console.log('✓ Password reset email sent');
     return true;
   } catch (error) {
     console.error('Error sending password reset email:', error);
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[DEV EMAIL] Reset link: ${resetLink}`);
+      console.warn('[DEV EMAIL] Password reset email was not sent; check mail service configuration');
     }
     return false;
   }
@@ -150,7 +150,7 @@ async function sendSubscriptionUpgradeEmail(user, newTier, price) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Upgrade confirmation email sent to ${user.email}`);
+    console.log('✓ Upgrade confirmation email sent');
     return true;
   } catch (error) {
     console.error('Error sending upgrade email:', error);
@@ -184,7 +184,7 @@ async function sendSubscriptionCancellationEmail(user) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Cancellation email sent to ${user.email}`);
+    console.log('✓ Cancellation email sent');
     return true;
   } catch (error) {
     console.error('Error sending cancellation email:', error);
@@ -223,7 +223,7 @@ async function sendTeamInvitationEmail(inviteEmail, invitedBy, teamName, invitat
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Team invitation email sent to ${inviteEmail}`);
+    console.log('✓ Team invitation email sent');
     return true;
   } catch (error) {
     console.error('Error sending team invitation email:', error);
@@ -254,7 +254,7 @@ async function sendPaymentFailureEmail(user, reason) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Payment failure email sent to ${user.email}`);
+    console.log('✓ Payment failure email sent');
     return true;
   } catch (error) {
     console.error('Error sending payment failure email:', error);
@@ -287,7 +287,7 @@ async function sendUsageLimitWarningEmail(user, usageType, percentageUsed) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`✓ Usage warning email sent to ${user.email}`);
+    console.log('✓ Usage warning email sent');
     return true;
   } catch (error) {
     console.error('Error sending usage warning email:', error);

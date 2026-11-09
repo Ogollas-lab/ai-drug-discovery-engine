@@ -10,10 +10,22 @@ const { traceMiddleware } = require('../observability/logger');
 const router = express.Router();
 router.use(traceMiddleware);
 
+function isValidMessages(messages) {
+  return Array.isArray(messages) &&
+    messages.length > 0 &&
+    messages.length <= 50 &&
+    messages.every((message) =>
+      message &&
+      (message.role === 'user' || message.role === 'assistant') &&
+      typeof message.content === 'string' &&
+      message.content.length <= 20000
+    );
+}
+
 router.post('/stream', async (req, res) => {
   const { messages } = req.body;
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ success: false, message: 'messages array required' });
+  if (!isValidMessages(messages)) {
+    return res.status(400).json({ success: false, message: 'messages must contain user or assistant text only' });
   }
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -43,8 +55,8 @@ router.post('/stream', async (req, res) => {
 /** Non-streaming fallback for simple clients */
 router.post('/', async (req, res) => {
   const { messages } = req.body;
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ success: false, message: 'messages required' });
+  if (!isValidMessages(messages)) {
+    return res.status(400).json({ success: false, message: 'messages must contain user or assistant text only' });
   }
 
   let text = '';
