@@ -16,6 +16,8 @@ interface ChatMsg {
   content: string;
 }
 
+type LLMMessage = ChatMsg | { role: "system"; content: string };
+
 const SYSTEM_PROMPT = `You are Pawanax AI, the intelligence layer of the Vitalis Drug Engine.
 You help researchers and curious learners explore drug discovery in plain language.
 
@@ -123,7 +125,7 @@ async function pubchemAnalyze(smiles: string, fallbackName?: string) {
 }
 
 // ---------- LLM streaming ----------
-async function* streamLLM(messages: ChatMsg[]): AsyncGenerator<string> {
+async function* streamLLM(messages: LLMMessage[]): AsyncGenerator<string> {
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) {
     yield "[LOVABLE_API_KEY not configured.]";
