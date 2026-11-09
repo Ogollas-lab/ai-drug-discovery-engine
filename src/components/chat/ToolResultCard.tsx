@@ -63,7 +63,7 @@ function AnalyzeToolCard({ data }: { data: Record<string, unknown> }) {
   const save = async () => {
     if (!cid) return;
     setSaveState('saving');
-    const r = await saveCompoundToDatabase(cid).catch(() => ({ saved: false }));
+    const r = await saveCompoundToDatabase(cid).catch(() => ({ saved: false, requiresAuth: false }));
     setSaveState(r.saved ? 'saved' : r.requiresAuth ? 'auth' : 'error');
   };
 
