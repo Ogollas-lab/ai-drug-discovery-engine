@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SAMPLE_MOLECULES, type MoleculeResult, type TargetInfo } from "@/data/targets";
 import { analyzeMoleculeUnified, type UnifiedAnalysisResult } from "@/lib/analyze-molecule";
-import { startEngineRun } from "@/lib/engine-api";
+import { isEngineApiConfigured, startEngineRun } from "@/lib/engine-api";
 import ConceptTooltip from "@/components/ConceptTooltip";
 import AIReasoningPanel from "./AIReasoningPanel";
 import EngineProgress from "./EngineProgress";
@@ -26,7 +26,7 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
   const [engineRunId, setEngineRunId] = useState<string | null>(null);
   const [engineReport, setEngineReport] = useState<string | null>(null);
   const [engineScientific, setEngineScientific] = useState<UnifiedAnalysisResult["scientific"]>(undefined);
-  const [useEngine, setUseEngine] = useState(true);
+  const [useEngine, setUseEngine] = useState(isEngineApiConfigured);
 
   const analyze = async () => {
     setAnalyzing(true);
@@ -38,21 +38,25 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
     onResult(null);
     try {
       if (useEngine) {
-        const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name);
+        const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name, useEngine);
         if (unified.molecule) {
           setResult(unified.molecule);
           onResult(unified.molecule);
           setEngineScientific(unified.scientific);
           onSmilesChange?.(smiles, unified.molecule.name);
 
-          const run = await startEngineRun(smiles, selectedTarget?.name);
-          setEngineRunId(run.runId);
+          try {
+            const run = await startEngineRun(smiles, selectedTarget?.name);
+            setEngineRunId(run.runId);
+          } catch {
+            // Keep the successful PubChem analysis even when the optional workflow service is unavailable.
+          }
           setAnalyzing(false);
           return;
         }
       }
 
-      const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name);
+      const unified = await analyzeMoleculeUnified(smiles, selectedTarget?.name, false);
       if (!unified.molecule) {
         setError(`"${smiles.slice(0, 40)}" could not be resolved. Check your SMILES string or try a compound name like "Aspirin".`);
       } else {
@@ -62,7 +66,7 @@ const WorkspaceAnalyzer = ({ selectedTarget, onResult, onSmilesChange }: Workspa
         onSmilesChange?.(smiles, unified.molecule.name);
       }
     } catch {
-      setError("Network error. Ensure backend is running at localhost:5000 or try again.");
+      setError("Could not retrieve molecule data. Check your connection and try again.");
     }
     setAnalyzing(false);
   };

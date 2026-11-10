@@ -2,7 +2,7 @@
  * Unified molecule analysis — prefer engine API, fallback to client PubChem.
  * Single entry point for workspace, screening, and XAI.
  */
-import { analyzeMoleculeEngine, type EngineAnalysis } from "./engine-api";
+import { analyzeMoleculeEngine, isEngineApiConfigured, type EngineAnalysis } from "./engine-api";
 import { generateMoleculeResultReal, type MoleculeResult } from "@/data/targets";
 
 export type AnalysisSource = "engine" | "client_fallback";
@@ -71,20 +71,23 @@ export function engineAnalysisToMoleculeResult(
 
 export async function analyzeMoleculeUnified(
   smiles: string,
-  targetName?: string
+  targetName?: string,
+  preferEngine = true
 ): Promise<UnifiedAnalysisResult> {
-  try {
-    const engine = await analyzeMoleculeEngine(smiles, targetName);
-    if (engine.success && engine.analysis) {
-      return {
-        source: "engine",
-        engine,
-        molecule: engineAnalysisToMoleculeResult(engine.analysis),
-        scientific: engine.analysis.scientific,
-      };
+  if (preferEngine && isEngineApiConfigured) {
+    try {
+      const engine = await analyzeMoleculeEngine(smiles, targetName);
+      if (engine.success && engine.analysis) {
+        return {
+          source: "engine",
+          engine,
+          molecule: engineAnalysisToMoleculeResult(engine.analysis),
+          scientific: engine.analysis.scientific,
+        };
+      }
+    } catch {
+      /* The hosted PubChem lookup below remains usable when the optional engine is unavailable. */
     }
-  } catch {
-    /* fall through */
   }
 
   const molecule = await generateMoleculeResultReal(smiles);
