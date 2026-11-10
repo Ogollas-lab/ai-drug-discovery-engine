@@ -1,7 +1,9 @@
 /**
  * Engine API client — connects frontend to LangChain-backed discovery engine.
  */
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const BASE_URL = import.meta.env.VITE_API_URL?.trim() || '';
+
+export const isEngineApiConfigured = BASE_URL.length > 0;
 
 export interface EngineAnalysis {
   success: boolean;
@@ -52,6 +54,9 @@ export interface RunEvent {
 }
 
 async function engineFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  if (!isEngineApiConfigured) {
+    throw new Error('The optional discovery engine is not configured.');
+  }
   const token = localStorage.getItem('token');
   const headers = new Headers(options.headers || {});
   headers.set('Content-Type', 'application/json');
